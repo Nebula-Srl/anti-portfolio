@@ -12,14 +12,7 @@ import type {
   DocumentRef,
   Skill,
 } from "@/lib/supabase/client";
-import {
-  MessageSquare,
-  User,
-  Clock,
-  FileText,
-  Award,
-  UserCircle,
-} from "lucide-react";
+import { MessageSquare, User, Clock, FileText, Award } from "lucide-react";
 import { DocumentsTab } from "./documents-tab";
 import { SkillsTab } from "./skills-tab";
 import { ProfileTab } from "./profile-tab";
@@ -75,7 +68,10 @@ export function TwinConversation({ twin, skills }: TwinConversationProps) {
             <div>
               <h2 className="font-semibold mb-1">{twin.display_name}</h2>
               <p className="text-sm text-white line-clamp-3">
-                {(twin.profile_json as TwinProfile).identity_summary}
+                {(twin.profile_json as TwinProfile).identity_summary &&
+                (twin.profile_json as TwinProfile).identity_summary !== "-"
+                  ? (twin.profile_json as TwinProfile).identity_summary
+                  : `Parla con il Digital Twin di ${twin.display_name}. Scopri di più attraverso una conversazione vocale.`}
               </p>
             </div>
           </div>
@@ -121,9 +117,9 @@ export function TwinConversation({ twin, skills }: TwinConversationProps) {
                   <span className="text-sm">Conversazione vocale</span>
                 </div>
                 <p className="text-white text-sm max-w-md mx-auto mb-6">
-                  Premi il pulsante per iniziare una conversazione vocale con{" "}
-                  {twin.display_name}. La conversazione terminerà dopo{" "}
-                  {SILENCE_TIMEOUT_SECONDS} secondi di silenzio.
+                  Clicca il pulsante al centro per iniziare una conversazione
+                  vocale con {twin.display_name}. La conversazione terminerà
+                  dopo {SILENCE_TIMEOUT_SECONDS} secondi di silenzio.
                 </p>
               </div>
 
@@ -135,72 +131,8 @@ export function TwinConversation({ twin, skills }: TwinConversationProps) {
                 autoConnect={false}
                 showTranscript={false}
                 showStopButton={true}
+                showControls={true}
               />
-
-              {/* Right Column: Live Transcript (visible on desktop during conversation) */}
-              <div className="hidden lg:block">
-                <div className="sticky top-8">
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-sm font-medium mb-3 text-white flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4" />
-                        Trascrizione in tempo reale
-                      </h3>
-                      <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
-                        {!isConnected && transcript.length === 0 ? (
-                          <p className="text-sm text-white italic text-center py-8">
-                            La trascrizione apparirà qui durante la
-                            conversazione
-                          </p>
-                        ) : transcript.length === 0 ? (
-                          <p className="text-sm text-white italic text-center py-8">
-                            In attesa di conversazione...
-                          </p>
-                        ) : (
-                          <div className="space-y-3">
-                            {transcript.map((entry, i) => (
-                              <div
-                                key={i}
-                                className={`p-3 rounded-lg text-sm ${
-                                  entry.role === "user"
-                                    ? "bg-primary/10 text-foreground"
-                                    : "bg-muted text-white"
-                                }`}
-                              >
-                                <span className="font-medium block mb-1 text-xs uppercase tracking-wide opacity-60">
-                                  {entry.role === "user"
-                                    ? "Tu"
-                                    : twin.display_name}
-                                </span>
-                                {entry.text}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Suggestions Card */}
-                  <Card className="mt-4">
-                    <CardContent className="pt-6">
-                      <h3 className="font-medium mb-3 text-sm">
-                        Domande suggerite:
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {getSuggestedQuestions().map((question, i) => (
-                          <span
-                            key={i}
-                            className="text-xs bg-muted px-3 py-1.5 rounded-full text-white"
-                          >
-                            {question}
-                          </span>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
             </TabsContent>
 
             <TabsContent value="documents">
@@ -218,6 +150,66 @@ export function TwinConversation({ twin, skills }: TwinConversationProps) {
               />
             </TabsContent>
           </Tabs>
+        </div>
+
+        {/* Right Column: Live Transcript (visible on desktop during conversation) */}
+        <div className="hidden lg:block">
+          <div className="sticky top-8">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-sm font-medium mb-3 text-white flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Trascrizione in tempo reale
+                </h3>
+                <div className="max-h-[calc(100vh-250px)] overflow-y-auto">
+                  {!isConnected && transcript.length === 0 ? (
+                    <p className="text-sm text-white italic text-center py-8">
+                      La trascrizione apparirà qui durante la conversazione
+                    </p>
+                  ) : transcript.length === 0 ? (
+                    <p className="text-sm text-white italic text-center py-8">
+                      In attesa di conversazione...
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {transcript.map((entry, i) => (
+                        <div
+                          key={i}
+                          className={`p-3 rounded-lg text-sm ${
+                            entry.role === "user"
+                              ? "bg-primary/10 text-foreground"
+                              : "bg-muted text-white"
+                          }`}
+                        >
+                          <span className="font-medium block mb-1 text-xs uppercase tracking-wide opacity-60">
+                            {entry.role === "user" ? "Tu" : twin.display_name}
+                          </span>
+                          {entry.text}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Suggestions Card */}
+            <Card className="mt-4">
+              <CardContent className="pt-6">
+                <h3 className="font-medium mb-3 text-sm">Domande suggerite:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {getSuggestedQuestions().map((question, i) => (
+                    <span
+                      key={i}
+                      className="text-xs bg-muted px-3 py-1.5 rounded-full text-white"
+                    >
+                      {question}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

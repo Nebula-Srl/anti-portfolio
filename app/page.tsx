@@ -29,6 +29,7 @@ import { SLUG_REGEX } from "@/lib/constants";
 import type { DocumentRef } from "@/lib/supabase/client";
 import type { PreInterviewData } from "@/lib/types";
 import { toast } from "react-toastify";
+import Image from "next/image";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -311,21 +312,24 @@ export default function LandingPage() {
       <main className="relative z-10">
         <div className="container mx-auto px-4 py-20 md:py-32">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary font-medium">
-                Powered by <strong>Salvatore Campagnese</strong>
-              </span>
-            </div>
+            <Image
+              src="/logo.svg"
+              alt="Digital Twin Portfolio"
+              className="mx-auto mb-6"
+              width={100}
+              height={100}
+            />
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-              Crea il tuo <span className="gradient-text">Digital Twin</span>
+              Crea il tuo <span className="gradient-text">Twino</span>: il twin
+              che mostra come pensi.
             </h1>
 
             <p className="text-lg md:text-xl text-white max-w-2xl mx-auto mb-10">
-              Un&apos;intervista vocale con l&apos;AI cattura la tua essenza. Il
-              tuo twin risponde per te, condivisibile con chiunque tramite un
-              link unico.
+              Una conversazione guidata con l’AI cattura il tuo processo
+              mentale, i tuoi pattern decisionali e il tuo metodo di lavoro. Il
+              tuo Twino parla per te — e mostra ciò che nessun portfolio può
+              raccontare.
             </p>
 
             <div className="max-w-md mx-auto space-y-4 mb-6">
@@ -346,12 +350,13 @@ export default function LandingPage() {
                 className="w-full text-lg h-14 rounded-xl gap-2 animate-glow"
               >
                 <Mic className="w-5 h-5" />
-                Crea il tuo Twin
+                Genara il tuo Twino
               </Button>
             </div>
 
             <p className="text-sm text-white italic">
-              10 minuti di intervista • Nessuna registrazione richiesta • Gratis
+              Il tuo Twino diventa condivisibile tramite un link unico e
+              personale.
             </p>
           </div>
 
@@ -367,11 +372,12 @@ export default function LandingPage() {
                     <Mic className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-3">
-                    Intervista Vocale
+                    Intervista Cognitiva
                   </h3>
                   <p className="text-white">
-                    Parla con l&apos;AI che ti fa domande approfondite su chi
-                    sei.
+                    Parla con l&apos;AI: non rispondi a un questionario, ma a
+                    domande che rivelano il tuo modo di ragionare. Il focus non
+                    è cosa hai fatto, ma come affronti un problema.
                   </p>
                 </div>
               </div>
@@ -380,9 +386,13 @@ export default function LandingPage() {
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6">
                     <Sparkles className="w-7 h-7 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">Creazione Twin</h3>
+                  <h3 className="text-xl font-semibold mb-3">
+                    Creazione del Twino
+                  </h3>
                   <p className="text-white">
-                    L&apos;AI elabora le tue risposte e crea il tuo profilo.
+                    Il sistema analizza il tuo pensiero, i tuoi pattern, i tuoi
+                    trade‑off. Da qui nasce il tuo Twino, il tuo digital twin
+                    cognitivo: una versione interattiva del tuo modo di pensare.
                   </p>
                 </div>
               </div>
@@ -391,9 +401,13 @@ export default function LandingPage() {
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6">
                     <Share2 className="w-7 h-7 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">Condividi</h3>
+                  <h3 className="text-xl font-semibold mb-3">
+                    Condivisione Intelligente
+                  </h3>
                   <p className="text-white">
-                    Ottieni un link unico per condividere il tuo twin.
+                    Ottieni un link unico per mostrare il tuo Twino a recruiter,
+                    collaboratori o clienti. Chi lo visita non legge un
+                    portfolio: ci parla.
                   </p>
                 </div>
               </div>
@@ -403,39 +417,47 @@ export default function LandingPage() {
           {/* Use cases */}
           <div className="mt-32 max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
-              Perfetto per
+              Perché Twino è diverso
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-6 rounded-2xl bg-card border border-border">
                 <MessageSquare className="w-8 h-8 text-primary mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Recruiter e HR</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Un portfolio non si legge: si vive.
+                </h3>
                 <p className="text-white text-sm">
-                  Permetti ai recruiter di parlare con te prima di un colloquio.
+                  Twino non è una pagina, è un’esperienza. Ogni visitatore
+                  scopre ciò che lo incuriosisce davvero, in conversazione.
                 </p>
               </div>
               <div className="p-6 rounded-2xl bg-card border border-border">
                 <MessageSquare className="w-8 h-8 text-primary mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
-                  Portfolio Creativo
+                  Mostra ciò che ti rende davvero unico.
                 </h3>
                 <p className="text-white text-sm">
-                  Aggiungi una dimensione interattiva al tuo portfolio.
+                  Non job title. Non frasi generiche. Non estetica. Solo il tuo
+                  pensiero in azione.
                 </p>
               </div>
               <div className="p-6 rounded-2xl bg-card border border-border">
                 <MessageSquare className="w-8 h-8 text-primary mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
-                  Personal Branding
+                  Un ritratto mentale, non un CV.
                 </h3>
                 <p className="text-white text-sm">
-                  Crea una versione di te sempre disponibile.
+                  Twino cattura: come prendi decisioni, come risolvi problemi
+                  ambigui, come impari dagli errori, cosa ti motiva davvero.
                 </p>
               </div>
               <div className="p-6 rounded-2xl bg-card border border-border">
                 <MessageSquare className="w-8 h-8 text-primary mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Networking</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  È impossibile da copiare.
+                </h3>
                 <p className="text-white text-sm">
-                  Condividi il tuo twin dopo un evento.
+                  L’output è il tuo modo di ragionare, non un template. Ogni
+                  Twino è irripetibile.
                 </p>
               </div>
             </div>

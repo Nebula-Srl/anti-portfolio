@@ -432,12 +432,44 @@ export function VoiceAgent({
         </div>
       )}
 
-      {/* Audio Visualizer */}
-      <AudioVisualizer
-        isActive={isConnected}
-        isSpeaking={isSpeaking}
-        size={180}
-      />
+      {/* Audio Visualizer with centered button */}
+      <div className="relative flex items-center justify-center">
+        <AudioVisualizer
+          isActive={isConnected}
+          isSpeaking={isSpeaking}
+          size={180}
+        />
+        
+        {/* Start button in center of circle (only when not connected) */}
+        {showControls && !isConnected && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              size="lg"
+              onClick={connect}
+              disabled={isConnecting}
+              className="gap-2 rounded-full w-16 h-16 p-0"
+              title="Avvia Conversazione"
+            >
+              <Phone className="w-6 h-6" />
+            </Button>
+          </div>
+        )}
+
+        {/* Stop button in center (when connected and showStopButton is true) */}
+        {showStopButton && isConnected && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              size="lg"
+              variant="destructive"
+              onClick={disconnect}
+              className="gap-2 rounded-full w-16 h-16 p-0"
+              title="Interrompi"
+            >
+              <StopCircle className="w-6 h-6" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Status */}
       <div className="text-center">
@@ -470,34 +502,6 @@ export function VoiceAgent({
 
         {error && <p className="text-destructive">{error}</p>}
       </div>
-
-      {/* Controls - only show start button, not terminate */}
-      {showControls && !isConnected && (
-        <div className="flex gap-4">
-          <Button
-            size="lg"
-            onClick={connect}
-            disabled={isConnecting}
-            className="gap-2"
-          >
-            <Phone className="w-5 h-5" />
-            {isConnecting ? "Connessione..." : "Avvia Conversazione"}
-          </Button>
-        </div>
-      )}
-
-      {/* Stop button during active conversation */}
-      {showStopButton && isConnected && (
-        <Button
-          size="lg"
-          variant="destructive"
-          onClick={disconnect}
-          className="gap-2"
-        >
-          <StopCircle className="w-5 h-5" />
-          Interrompi
-        </Button>
-      )}
 
       {/* Live Transcript Preview (optional) - uses filtered displayTranscript */}
       {showTranscript && displayTranscript.length > 0 && (

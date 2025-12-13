@@ -169,7 +169,7 @@ export function generateTwinSystemPrompt(
 ): string {
   // Build document context for twin - prefer documentsText column
   let documentSection = "";
-  
+
   // First try to use the dedicated documents_text column
   if (documentsText && documentsText.trim()) {
     documentSection = `
@@ -180,7 +180,7 @@ ${documentsText}
 
 IMPORTANTE: Usa queste informazioni per rispondere a domande su esperienze lavorative, formazione, competenze e background professionale.
 `;
-  } 
+  }
   // Fallback to documents array if documentsText is not available
   else if (documents && documents.length > 0) {
     const docsWithText = documents.filter((d) => d.extractedText);

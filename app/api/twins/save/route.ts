@@ -6,6 +6,8 @@ import {
   type TwinProfile,
   type DocumentRef,
 } from "@/lib/supabase/client";
+import { extractSkills } from "@/lib/openai/skills-extraction";
+import type { PortfolioInfo } from "@/lib/types";
 
 interface SaveTwinRequest {
   slug: string;
@@ -14,6 +16,7 @@ interface SaveTwinRequest {
   profile?: Partial<TwinProfile>;
   transcript?: string;
   documents?: DocumentRef[];
+  portfolioInfo?: PortfolioInfo;
 }
 
 // Ensure profile has all required fields with fallbacks
@@ -40,7 +43,15 @@ function normalizeProfile(profile?: Partial<TwinProfile>): TwinProfile {
 export async function POST(request: Request) {
   try {
     const body: SaveTwinRequest = await request.json();
-    const { slug, displayName, email, profile, transcript, documents } = body;
+    const {
+      slug,
+      displayName,
+      email,
+      profile,
+      transcript,
+      documents,
+      portfolioInfo,
+    } = body;
 
     // Validate slug (required)
     if (!slug) {
@@ -112,6 +123,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Extract skills asynchronously (don't block response)
+    // This runs in the background after twin is saved
+    if (data?.id) {
+      extractAndSaveSkills(
+        data.id,
+        transcript || "-",
+        documentsText,
+        portfolioInfo
+      ).catch((err) => {
+        console.error("Skills extraction failed (non-blocking):", err);
+      });
+    }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     return NextResponse.json({
@@ -128,5 +152,51 @@ export async function POST(request: Request) {
       { error: "Errore interno del server" },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Extract and save skills asynchronously (non-blocking)
+ */
+async function extractAndSaveSkills(
+  twinId: string,
+  transcript: string,
+  documentsText: string | null,
+  portfolioInfo?: PortfolioInfo
+) {
+  try {
+    const skills = await extractSkills(
+      transcript,
+      documentsText,
+      portfolioInfo
+    );
+
+    if (skills.length === 0) {
+      console.log(`No skills extracted for twin ${twinId}`);
+      return;
+    }
+
+    // Save skills to database
+    const supabase = createServerSupabaseClient();
+
+    const skillsToInsert = skills.map((skill) => ({
+      twin_id: twinId,
+      skill_name: skill.skill_name,
+      category: skill.category,
+      proficiency_level: skill.proficiency_level || null,
+      evidence: skill.evidence || null,
+      source: skill.source,
+    }));
+
+    const { error } = await supabase.from("skills").insert(skillsToInsert);
+
+    if (error) {
+      console.error("Error saving skills:", error);
+    } else {
+      console.log(`Saved ${skills.length} skills for twin ${twinId}`);
+    }
+  } catch (error) {
+    console.error("Skills extraction/save error:", error);
+    // Don't throw - this is non-blocking
   }
 }

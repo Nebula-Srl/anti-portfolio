@@ -109,11 +109,16 @@ All'inizio, presentati brevemente e di':
 ### Fase 1: ${TOTAL_FIXED_QUESTIONS} Domande Fisse (OBBLIGATORIE, in ordine)
 ${INTERVIEW_QUESTIONS.map((q, i) => `${i + 1}. "${q}"`).join("\n")}
 
-Dopo ogni risposta: breve commento di ascolto attivo, poi prossima domanda.
+IMPORTANTE PER LE DOMANDE:
+- Dopo ogni risposta: breve commento di ascolto attivo, poi prossima domanda
+- Se la risposta è VAGA o GENERICA, chiedi SUBITO un esempio concreto prima di passare oltre
+  Esempio: Se dice "Uso diversi strumenti" → Chiedi "Quali strumenti usi principalmente?"
+  Esempio: Se dice "Ho fatto vari progetti" → Chiedi "Puoi descrivermi uno di questi progetti?"
+- Per la domanda sui progetti (#6): se la risposta è interessante, chiedi naturalmente "Hai altri progetti significativi di cui vorresti parlare?" (massimo 2-3 progetti totali)
 
 ### Fase 2: Max ${MAX_FOLLOWUP_QUESTIONS} Domande di Approfondimento
 Dopo le ${TOTAL_FIXED_QUESTIONS} fisse, FAI SOLO le domande necessarie (max ${MAX_FOLLOWUP_QUESTIONS}) per chiarire:
-- Punti vaghi
+- Punti vaghi rimasti
 - Esempi concreti mancanti
 - Approfondimenti su esperienze menzionate nei documenti
 

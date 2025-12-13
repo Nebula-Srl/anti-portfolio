@@ -11,7 +11,7 @@ import {
   SILENCE_TIMEOUT_SECONDS,
 } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Phone, Clock } from "lucide-react";
+import { Mic, MicOff, Phone, Clock, StopCircle } from "lucide-react";
 import { AudioVisualizer } from "./audio-visualizer";
 
 interface TranscriptEntry {
@@ -30,6 +30,8 @@ interface VoiceAgentProps {
   autoConnect?: boolean;
   showTranscript?: boolean;
   showControls?: boolean; // New: control visibility of buttons
+  showStopButton?: boolean; // New: show stop button during conversation
+  showReadyPrompt?: boolean; // New: show "Sono pronto" prompt until first AI message
   className?: string;
 }
 
@@ -75,6 +77,8 @@ export function VoiceAgent({
   autoConnect = false,
   showTranscript = true,
   showControls = true,
+  showStopButton = false,
+  showReadyPrompt = false,
   className = "",
 }: VoiceAgentProps) {
   const [isConnected, setIsConnected] = useState(false);
@@ -86,6 +90,7 @@ export function VoiceAgent({
     []
   );
   const [silenceCountdown, setSilenceCountdown] = useState<number | null>(null);
+  const [hasReceivedFirstMessage, setHasReceivedFirstMessage] = useState(false);
 
   const clientRef = useRef<RealtimeClient | null>(null);
   const transcriptRef = useRef<TranscriptEntry[]>([]);
@@ -282,6 +287,11 @@ export function VoiceAgent({
 
       // Check for profile in assistant messages
       if (role === "assistant") {
+        // Mark that we've received the first AI message
+        if (!hasReceivedFirstMessage) {
+          setHasReceivedFirstMessage(true);
+        }
+        
         // First check if there's a JSON profile
         const found = checkForProfile(fullTranscriptTextRef.current);
         // If not, check for completion phrase
@@ -304,6 +314,7 @@ export function VoiceAgent({
     profileDetectedRef.current = false;
     completionDetectedRef.current = false;
     fullTranscriptTextRef.current = "";
+    setHasReceivedFirstMessage(false);
 
     try {
       // Get ephemeral token from our API
@@ -402,6 +413,25 @@ export function VoiceAgent({
 
   return (
     <div className={`flex flex-col items-center gap-6 ${className}`}>
+      {/* Ready Prompt Modal - Show when connected but no AI message yet */}
+      {showReadyPrompt && isConnected && !hasReceivedFirstMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Mic className="w-8 h-8 text-primary animate-pulse" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Inizia quando sei pronto</h3>
+            <p className="text-muted-foreground mb-4">
+              Pronuncia <strong className="text-foreground">&quot;Sono pronto&quot;</strong> quando vuoi iniziare l&apos;intervista
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Microfono attivo</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Audio Visualizer */}
       <AudioVisualizer
         isActive={isConnected}
@@ -412,19 +442,17 @@ export function VoiceAgent({
       {/* Status */}
       <div className="text-center">
         {isConnecting && (
-          <p className="text-muted-foreground animate-pulse">
-            Connessione in corso...
-          </p>
+          <p className="text-white animate-pulse">Connessione in corso...</p>
         )}
 
         {isConnected && !isSpeaking && (
-          <p className="text-muted-foreground flex items-center gap-2 justify-center">
+          <p className="text-white flex items-center gap-2 justify-center">
             <Mic className="w-4 h-4 text-green-500" />
             In ascolto...
           </p>
         )}
         {isConnected && isSpeaking && (
-          <p className="text-muted-foreground flex items-center gap-2 justify-center">
+          <p className="text-white flex items-center gap-2 justify-center">
             <MicOff className="w-4 h-4 text-amber-500" />
             L&apos;AI sta parlando...
           </p>
@@ -458,11 +486,24 @@ export function VoiceAgent({
         </div>
       )}
 
+      {/* Stop button during active conversation */}
+      {showStopButton && isConnected && (
+        <Button
+          size="lg"
+          variant="destructive"
+          onClick={disconnect}
+          className="gap-2"
+        >
+          <StopCircle className="w-5 h-5" />
+          Interrompi
+        </Button>
+      )}
+
       {/* Live Transcript Preview (optional) - uses filtered displayTranscript */}
       {showTranscript && displayTranscript.length > 0 && (
         <div className="w-full max-w-2xl mt-4">
           <div className="bg-muted/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-            <h4 className="text-sm font-medium mb-3 text-muted-foreground">
+            <h4 className="text-sm font-medium mb-3 text-white">
               Trascrizione
             </h4>
             <div className="space-y-3">
@@ -472,7 +513,7 @@ export function VoiceAgent({
                   className={`text-sm ${
                     entry.role === "user"
                       ? "text-foreground"
-                      : "text-muted-foreground italic"
+                      : "text-white italic"
                   }`}
                 >
                   <span className="font-medium">

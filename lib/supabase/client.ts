@@ -48,6 +48,17 @@ export interface DocumentRef {
   extractedText?: string // Text content extracted from the document for AI context
 }
 
+export interface Skill {
+  id: string
+  twin_id: string
+  skill_name: string
+  category: 'technical' | 'soft' | 'domain' | 'tools'
+  proficiency_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert'
+  evidence?: string
+  source: 'interview' | 'document' | 'portfolio'
+  created_at: string
+}
+
 // Create empty/default profile for error fallback
 export function createDefaultProfile(): TwinProfile {
   return {

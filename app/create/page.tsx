@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 
 // Filter JSON blocks from text for display purposes
 function filterJsonFromText(text: string): string {
@@ -24,7 +24,13 @@ import {
   MAX_TOTAL_QUESTIONS,
   SILENCE_TIMEOUT_SECONDS,
 } from "@/lib/constants";
-import { ArrowLeft, Check, Loader2, LinkIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Loader2,
+  LinkIcon,
+  MessageSquare,
+} from "lucide-react";
 import { createDefaultProfile, type TwinProfile } from "@/lib/supabase/client";
 import type { PortfolioInfo, PreInterviewData } from "@/lib/types";
 
@@ -42,6 +48,7 @@ export default function CreatePage() {
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [isDeepening, setIsDeepening] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const transcriptRef = useRef<TranscriptEntry[]>([]); // Ref to always have latest transcript
   const [error, setError] = useState<string | null>(null);
 
   // Pre-interview data
@@ -102,6 +109,7 @@ export default function CreatePage() {
   // Track question progress
   const handleTranscriptUpdate = useCallback((entries: TranscriptEntry[]) => {
     setTranscript(entries);
+    transcriptRef.current = entries; // Keep ref updated for callbacks
     const assistantMessages = entries.filter(
       (e) => e.role === "assistant"
     ).length;
@@ -132,8 +140,8 @@ export default function CreatePage() {
             : [],
         };
 
-        // Build full transcript
-        const fullTranscript = transcript
+        // Build full transcript from ref (always latest)
+        const fullTranscript = transcriptRef.current
           .map(
             (entry) =>
               `${entry.role === "user" ? "UTENTE" : "AI"}: ${entry.text}`
@@ -159,6 +167,7 @@ export default function CreatePage() {
             profile: normalizedProfile,
             transcript: fullTranscript,
             documents: preData.documents,
+            portfolioInfo: portfolioInfo,
           }),
         });
 
@@ -183,7 +192,7 @@ export default function CreatePage() {
         await saveWithFallback();
       }
     },
-    [preData, transcript, portfolioInfo, router]
+    [preData, portfolioInfo, router]
   );
 
   // Fallback save with minimal data
@@ -195,7 +204,8 @@ export default function CreatePage() {
     }
 
     try {
-      const fullTranscript = transcript
+      // Use ref for latest transcript
+      const fullTranscript = transcriptRef.current
         .map(
           (entry) => `${entry.role === "user" ? "UTENTE" : "AI"}: ${entry.text}`
         )
@@ -230,7 +240,7 @@ export default function CreatePage() {
       setError("Errore nel salvataggio. Riprova.");
       setState("error");
     }
-  }, [preData, transcript, router]);
+  }, [preData, router]);
 
   // Retry from error
   const handleRetry = useCallback(() => {
@@ -280,7 +290,7 @@ export default function CreatePage() {
 
           {/* Show slug badge */}
           {preData && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-white">
               <span className="font-mono bg-muted px-2 py-1 rounded">
                 /t/{preData.slug}
               </span>
@@ -294,7 +304,7 @@ export default function CreatePage() {
             <h1 className="text-3xl md:text-4xl font-bold mb-6">
               Pronto per l&apos;intervista
             </h1>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-lg text-white mb-8">
               Ora parlerai con l&apos;AI che ti farà alcune domande per creare
               il tuo Digital Twin. Quando sei pronto, di&apos;{" "}
               <strong>&quot;Sono pronto&quot;</strong> per iniziare.
@@ -309,38 +319,53 @@ export default function CreatePage() {
               </div>
             )}
 
-            <Card className="mb-8">
+            <Card className="mb-6 bg-primary/5 border-primary/20">
               <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4">Riepilogo:</h3>
-                <ul className="text-left text-sm text-muted-foreground space-y-2">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  Come interagire al meglio con l&apos;AI
+                </h3>
+                <ul className="text-sm text-white space-y-2">
                   <li className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span className="text-primary mt-0.5">•</span>
                     <span>
-                      Twin: <code className="font-mono">/{preData.slug}</code>
+                      <strong>Usa esempi concreti:</strong> L&apos;AI
+                      approfondirà le risposte più specifiche e dettagliate
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    <span>Email: {preData.email}</span>
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>
+                      <strong>Chiedi chiarimenti:</strong> Se qualcosa non ti è
+                      chiaro, chiedi pure. L&apos;AI è qui per aiutarti
+                    </span>
                   </li>
-                  {preData.documents.length > 0 && (
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>{preData.documents.length} documento caricato</span>
-                    </li>
-                  )}
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>
+                      <strong>Parla naturalmente:</strong> Rispondi come in una
+                      conversazione normale, senza formalismi
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>
+                      <strong>Sii te stesso:</strong> L&apos;obiettivo è
+                      catturare la tua personalità autentica
+                    </span>
+                  </li>
                 </ul>
-
-                <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <p className="text-sm text-amber-600">
-                    <strong>Importante:</strong> Di&apos; &quot;Sono
-                    pronto&quot; per iniziare l&apos;intervista. Se rimani in
-                    silenzio per {SILENCE_TIMEOUT_SECONDS} secondi, la
-                    conversazione terminerà automaticamente.
-                  </p>
-                </div>
               </CardContent>
             </Card>
+
+            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <p className="text-sm text-amber-600">
+                <strong>Importante:</strong> Di&apos; &quot;Sono pronto&quot;
+                per iniziare l&apos;intervista. Se rimani in silenzio per{" "}
+                {SILENCE_TIMEOUT_SECONDS} secondi, la conversazione terminerà
+                automaticamente.
+              </p>
+            </div>
 
             <Button size="lg" onClick={startInterview} className="gap-2">
               Inizia l&apos;intervista
@@ -369,18 +394,19 @@ export default function CreatePage() {
                 autoConnect={true}
                 showTranscript={false}
                 showControls={false}
+                showReadyPrompt={true}
               />
             </div>
 
             {/* Transcript sidebar */}
             <div className="hidden lg:block w-96 shrink-0">
               <div className="sticky top-8">
-                <h3 className="text-sm font-medium mb-3 text-muted-foreground">
+                <h3 className="text-sm font-medium mb-3 text-white">
                   Trascrizione
                 </h3>
                 <div className="bg-card border border-border rounded-xl p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
                   {displayTranscript.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic">
+                    <p className="text-sm text-white italic">
                       Quando sei pronto, di&apos; &quot;Sono pronto&quot;
                     </p>
                   ) : (
@@ -391,7 +417,7 @@ export default function CreatePage() {
                           className={`p-3 rounded-lg text-sm ${
                             entry.role === "user"
                               ? "bg-primary/10 text-foreground"
-                              : "bg-muted text-muted-foreground"
+                              : "bg-muted text-white"
                           }`}
                         >
                           <span className="font-medium block mb-1 text-xs uppercase tracking-wide opacity-60">
@@ -413,9 +439,7 @@ export default function CreatePage() {
           <div className="max-w-md mx-auto text-center py-20">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-6" />
             <h2 className="text-2xl font-bold mb-4">Salvataggio in corso...</h2>
-            <p className="text-muted-foreground">
-              Stiamo creando il tuo Digital Twin.
-            </p>
+            <p className="text-white">Stiamo creando il tuo Digital Twin.</p>
           </div>
         )}
 
@@ -426,12 +450,10 @@ export default function CreatePage() {
               <Check className="w-8 h-8 text-green-500" />
             </div>
             <h2 className="text-2xl font-bold mb-4">Complimenti!</h2>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-white mb-4">
               Il tuo Digital Twin è stato creato con successo.
             </p>
-            <p className="text-sm text-muted-foreground">
-              Reindirizzamento in corso...
-            </p>
+            <p className="text-sm text-white">Reindirizzamento in corso...</p>
           </div>
         )}
 
@@ -445,7 +467,7 @@ export default function CreatePage() {
             <h2 className="text-2xl font-bold mb-4">
               Si è verificato un errore
             </h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-white mb-6">
               {error || "Qualcosa è andato storto."}
             </p>
 

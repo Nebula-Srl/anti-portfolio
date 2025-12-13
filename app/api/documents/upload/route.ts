@@ -176,10 +176,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Max 10MB
-    if (file.size > 10 * 1024 * 1024) {
+    // Max 25MB
+    if (file.size > 25 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File troppo grande. Massimo 10MB." },
+        { error: "File troppo grande. Massimo 25MB." },
         { status: 400 }
       );
     }

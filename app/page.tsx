@@ -28,6 +28,7 @@ import {
 import { SLUG_REGEX } from "@/lib/constants";
 import type { DocumentRef } from "@/lib/supabase/client";
 import type { PreInterviewData } from "@/lib/types";
+import { toast } from "react-toastify";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -48,6 +49,19 @@ export default function LandingPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset modal form
+  const resetModalForm = useCallback(() => {
+    setSlug("");
+    setEmail("");
+    setDocuments([]);
+    setSlugError(null);
+    setEmailError(null);
+    setIsUploading(false);
+    setIsValidating(false);
+    setIsCheckingSlug(false);
+    setIsCheckingEmail(false);
+  }, []);
+
   // Validate slug format
   const validateSlug = useCallback((value: string): string | null => {
     if (!value || value.length < 3) return "Minimo 3 caratteri";
@@ -66,23 +80,17 @@ export default function LandingPage() {
   }, []);
 
   // Handle slug change
-  const handleSlugChange = useCallback(
-    (value: string) => {
-      const normalized = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
-      setSlug(normalized);
-      setSlugError(validateSlug(normalized));
-    },
-    [validateSlug]
-  );
+  const handleSlugChange = useCallback((value: string) => {
+    const normalized = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    setSlug(normalized);
+    // Don't validate immediately, only normalize
+  }, []);
 
   // Handle email change
-  const handleEmailChange = useCallback(
-    (value: string) => {
-      setEmail(value);
-      setEmailError(validateEmail(value));
-    },
-    [validateEmail]
-  );
+  const handleEmailChange = useCallback((value: string) => {
+    setEmail(value);
+    // Don't validate immediately
+  }, []);
 
   // Check slug availability on blur
   const handleSlugBlur = useCallback(async () => {
@@ -182,6 +190,13 @@ export default function LandingPage() {
 
   // Open modal and start analysis
   const handleOpenModal = useCallback(async () => {
+    if (!portfolioUrl.trim()) {
+      toast.error("Link al portfolio richiesto");
+      return;
+    }
+    // Reset form first
+    resetModalForm();
+
     setShowModal(true);
 
     // If portfolio URL provided, analyze it
@@ -215,7 +230,7 @@ export default function LandingPage() {
       }
       setIsAnalyzing(false);
     }
-  }, [portfolioUrl]);
+  }, [portfolioUrl, resetModalForm]);
 
   // Submit and go to interview
   const handleSubmit = useCallback(async () => {
@@ -299,7 +314,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-sm text-primary font-medium">
-                Powered by <strong>Nebula S.r.l</strong>
+                Powered by <strong>Salvatore Campagnese</strong>
               </span>
             </div>
 
@@ -315,7 +330,7 @@ export default function LandingPage() {
 
             <div className="max-w-md mx-auto space-y-4 mb-6">
               <div className="relative">
-                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white" />
                 <Input
                   type="url"
                   placeholder="Link al tuo portfolio (LinkedIn, GitHub, Behance...)"
@@ -335,7 +350,7 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-white italic">
               10 minuti di intervista • Nessuna registrazione richiesta • Gratis
             </p>
           </div>
@@ -354,7 +369,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-semibold mb-3">
                     Intervista Vocale
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-white">
                     Parla con l&apos;AI che ti fa domande approfondite su chi
                     sei.
                   </p>
@@ -366,7 +381,7 @@ export default function LandingPage() {
                     <Sparkles className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Creazione Twin</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-white">
                     L&apos;AI elabora le tue risposte e crea il tuo profilo.
                   </p>
                 </div>
@@ -377,7 +392,7 @@ export default function LandingPage() {
                     <Share2 className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Condividi</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-white">
                     Ottieni un link unico per condividere il tuo twin.
                   </p>
                 </div>
@@ -394,7 +409,7 @@ export default function LandingPage() {
               <div className="p-6 rounded-2xl bg-card border border-border">
                 <MessageSquare className="w-8 h-8 text-primary mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Recruiter e HR</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-white text-sm">
                   Permetti ai recruiter di parlare con te prima di un colloquio.
                 </p>
               </div>
@@ -403,7 +418,7 @@ export default function LandingPage() {
                 <h3 className="text-lg font-semibold mb-2">
                   Portfolio Creativo
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-white text-sm">
                   Aggiungi una dimensione interattiva al tuo portfolio.
                 </p>
               </div>
@@ -412,14 +427,14 @@ export default function LandingPage() {
                 <h3 className="text-lg font-semibold mb-2">
                   Personal Branding
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-white text-sm">
                   Crea una versione di te sempre disponibile.
                 </p>
               </div>
               <div className="p-6 rounded-2xl bg-card border border-border">
                 <MessageSquare className="w-8 h-8 text-primary mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Networking</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-white text-sm">
                   Condividi il tuo twin dopo un evento.
                 </p>
               </div>
@@ -428,17 +443,30 @@ export default function LandingPage() {
         </div>
 
         <footer className="border-t border-border mt-20 py-8">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <div className="container mx-auto px-4 text-center text-sm text-white">
             <p>
-              Digital Twin Portfolio • Creato da <strong>Nebula S.r.l</strong>
+              Digital Twin Portfolio • Creato da{" "}
+              <strong>Salvatore Campagnese</strong>
             </p>
           </div>
         </footer>
       </main>
 
       {/* Pre-Interview Modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog
+        open={showModal}
+        onOpenChange={(open) => {
+          // Only allow closing via the "Annulla" button, not by clicking outside
+          if (!open && !isValidating && !isAnalyzing) {
+            setShowModal(false);
+          }
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-lg"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Configura il tuo Digital Twin</DialogTitle>
             <DialogDescription>
@@ -450,9 +478,7 @@ export default function LandingPage() {
           {isAnalyzing ? (
             <div className="py-8 text-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                Analisi portfolio in corso...
-              </p>
+              <p className="text-white">Analisi portfolio in corso...</p>
             </div>
           ) : (
             <div className="space-y-6 py-4">
@@ -462,9 +488,7 @@ export default function LandingPage() {
                   Nome del Twin *
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm shrink-0">
-                    twin.app/
-                  </span>
+                  <span className="text-white text-sm shrink-0">twin.app/</span>
                   <div className="relative flex-1">
                     <Input
                       value={slug}
@@ -477,7 +501,7 @@ export default function LandingPage() {
                       maxLength={30}
                     />
                     {isCheckingSlug && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-white" />
                     )}
                   </div>
                 </div>
@@ -495,7 +519,7 @@ export default function LandingPage() {
                   Email *
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
                   <Input
                     type="email"
                     value={email}
@@ -507,7 +531,7 @@ export default function LandingPage() {
                     }`}
                   />
                   {isCheckingEmail && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-white" />
                   )}
                 </div>
                 {emailError && (
@@ -516,7 +540,7 @@ export default function LandingPage() {
                     {emailError}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-white mt-2">
                   Nessuna newsletter. Serve solo per modificare il tuo twin in
                   futuro.
                 </p>
@@ -527,7 +551,7 @@ export default function LandingPage() {
                 <label className="text-sm font-medium mb-2 block">
                   Documento (opzionale)
                 </label>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-xs text-white mb-3">
                   Carica CV, portfolio PDF o altri documenti per arricchire il
                   tuo profilo.
                 </p>
@@ -563,7 +587,7 @@ export default function LandingPage() {
                 </Button>
 
                 {slug.length < 3 && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-white mt-2">
                     Inserisci prima il nome del twin per caricare documento.
                   </p>
                 )}
@@ -576,7 +600,7 @@ export default function LandingPage() {
                         key={i}
                         className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm"
                       >
-                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <FileText className="w-4 h-4 text-white shrink-0" />
                         <span className="flex-1 truncate">{doc.name}</span>
                         <Button
                           type="button"
@@ -598,7 +622,10 @@ export default function LandingPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowModal(false)}
+              onClick={() => {
+                resetModalForm();
+                setShowModal(false);
+              }}
               disabled={isValidating}
             >
               Annulla

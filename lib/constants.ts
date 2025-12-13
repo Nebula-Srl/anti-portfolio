@@ -69,8 +69,32 @@ export const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 export const RATE_LIMIT_MAX_REQUESTS = 10;
 
 // ==========================================
+// UPLOAD CONFIG
+// ==========================================
+
+export const MAX_UPLOAD_SIZE_MB = 25;
+
+// ==========================================
 // OPENAI CONFIG
 // ==========================================
 
 export const OPENAI_REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17";
 export const OPENAI_REALTIME_VOICE = "alloy";
+
+// ==========================================
+// SKILLS CATEGORIES
+// ==========================================
+
+export const SKILL_CATEGORIES = {
+  TECHNICAL: "technical",
+  SOFT: "soft",
+  DOMAIN: "domain",
+  TOOLS: "tools",
+} as const;
+
+export const PROFICIENCY_LEVELS = {
+  BEGINNER: "beginner",
+  INTERMEDIATE: "intermediate",
+  ADVANCED: "advanced",
+  EXPERT: "expert",
+} as const;

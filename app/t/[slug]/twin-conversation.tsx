@@ -1,25 +1,35 @@
-'use client'
+"use client";
 
-import { useMemo } from 'react'
-import { VoiceAgent } from '@/components/voice-agent'
-import { Card, CardContent } from '@/components/ui/card'
-import { generateTwinSystemPrompt } from '@/lib/prompts'
-import type { Twin, TwinProfile } from '@/lib/supabase/client'
-import { MessageSquare, User } from 'lucide-react'
+import { useMemo, useCallback, useState } from "react";
+import { VoiceAgent } from "@/components/voice-agent";
+import { Card, CardContent } from "@/components/ui/card";
+import { generateTwinSystemPrompt } from "@/lib/prompts";
+import { SILENCE_TIMEOUT_SECONDS } from "@/lib/constants";
+import type { Twin, TwinProfile, DocumentRef } from "@/lib/supabase/client";
+import { MessageSquare, User, Clock } from "lucide-react";
 
 interface TwinConversationProps {
-  twin: Twin
+  twin: Twin;
 }
 
 export function TwinConversation({ twin }: TwinConversationProps) {
-  // Generate system prompt for the twin
+  const [conversationEnded, setConversationEnded] = useState(false);
+
+  // Generate system prompt for the twin (including documents if available)
   const systemPrompt = useMemo(() => {
     return generateTwinSystemPrompt(
       twin.display_name,
       twin.profile_json as TwinProfile,
-      twin.transcript
-    )
-  }, [twin])
+      twin.transcript,
+      twin.documents_text,
+      twin.documents as DocumentRef[] | undefined
+    );
+  }, [twin]);
+
+  // Handle silence timeout - just end the conversation gracefully
+  const handleSilenceTimeout = useCallback(() => {
+    setConversationEnded(true);
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -40,6 +50,17 @@ export function TwinConversation({ twin }: TwinConversationProps) {
         </CardContent>
       </Card>
 
+      {/* Conversation Ended Message */}
+      {conversationEnded && (
+        <div className="mb-8 p-4 bg-muted border border-border rounded-xl text-center">
+          <Clock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">
+            La conversazione è terminata per inattività. Clicca &quot;Avvia
+            Conversazione&quot; per ricominciare.
+          </p>
+        </div>
+      )}
+
       {/* Conversation Interface */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border mb-4">
@@ -47,13 +68,15 @@ export function TwinConversation({ twin }: TwinConversationProps) {
           <span className="text-sm">Conversazione vocale</span>
         </div>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
-          Premi il pulsante per iniziare una conversazione vocale con {twin.display_name}. 
-          Puoi fare domande sulla sua esperienza, competenze e modo di lavorare.
+          Premi il pulsante per iniziare una conversazione vocale con{" "}
+          {twin.display_name}. La conversazione terminerà dopo{" "}
+          {SILENCE_TIMEOUT_SECONDS} secondi di silenzio.
         </p>
       </div>
 
       <VoiceAgent
         systemPrompt={systemPrompt}
+        onSilenceTimeout={handleSilenceTimeout}
         autoConnect={false}
       />
 
@@ -63,7 +86,7 @@ export function TwinConversation({ twin }: TwinConversationProps) {
           <h3 className="font-medium mb-3 text-sm">Domande suggerite:</h3>
           <div className="flex flex-wrap gap-2">
             {getSuggestedQuestions().map((question, i) => (
-              <span 
+              <span
                 key={i}
                 className="text-xs bg-muted px-3 py-1.5 rounded-full text-muted-foreground"
               >
@@ -74,7 +97,7 @@ export function TwinConversation({ twin }: TwinConversationProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function getSuggestedQuestions(): string[] {
@@ -83,7 +106,6 @@ function getSuggestedQuestions(): string[] {
     `Come affronti i problemi complessi?`,
     `Qual è stata la tua sfida più grande?`,
     `Cosa ti rende unico/a?`,
-    `Come lavori in team?`
-  ]
+    `Come lavori in team?`,
+  ];
 }
-

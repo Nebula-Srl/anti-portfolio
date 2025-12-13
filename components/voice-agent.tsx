@@ -11,7 +11,7 @@ import {
   SILENCE_TIMEOUT_SECONDS,
 } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Phone, PhoneOff, Clock } from "lucide-react";
+import { Mic, MicOff, Phone, Clock } from "lucide-react";
 import { AudioVisualizer } from "./audio-visualizer";
 
 interface TranscriptEntry {
@@ -26,8 +26,10 @@ interface VoiceAgentProps {
   onProfileDetected?: (profile: unknown) => void;
   onConnectionChange?: (connected: boolean) => void;
   onSilenceTimeout?: () => void;
+  onCompletionDetected?: () => void; // New: called when AI signals completion
   autoConnect?: boolean;
   showTranscript?: boolean;
+  showControls?: boolean; // New: control visibility of buttons
   className?: string;
 }
 
@@ -47,14 +49,32 @@ function containsJsonProfile(text: string): boolean {
   return text.includes("```json") && text.includes("twin_profile");
 }
 
+// Check if AI is signaling completion (before JSON is generated)
+function isCompletionPhrase(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  const completionPhrases = [
+    "sto generando",
+    "sto creando il tuo",
+    "sto creando il tuo digital twin",
+    "sto creando il tuo twin",
+    "abbiamo finito",
+    "abbiamo tutte le informazioni",
+    "tutte le informazioni necessarie",
+    "perfetto! abbiamo finito",
+  ];
+  return completionPhrases.some((phrase) => lowerText.includes(phrase));
+}
+
 export function VoiceAgent({
   systemPrompt,
   onTranscriptUpdate,
   onProfileDetected,
   onConnectionChange,
   onSilenceTimeout,
+  onCompletionDetected,
   autoConnect = false,
   showTranscript = true,
+  showControls = true,
   className = "",
 }: VoiceAgentProps) {
   const [isConnected, setIsConnected] = useState(false);
@@ -74,6 +94,8 @@ export function VoiceAgent({
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const profileDetectedRef = useRef(false);
+  const completionDetectedRef = useRef(false);
+  const fullTranscriptTextRef = useRef<string>(""); // Accumulate all text
 
   // Disconnect function - defined early so it can be used in checkForProfile
   const disconnect = useCallback(() => {
@@ -106,14 +128,24 @@ export function VoiceAgent({
     setSilenceCountdown(null);
 
     // Don't set timer if profile already detected or not connected
-    if (profileDetectedRef.current || !mountedRef.current) return;
+    if (
+      profileDetectedRef.current ||
+      completionDetectedRef.current ||
+      !mountedRef.current
+    )
+      return;
 
     // Start countdown display when 10 seconds remain
     const warningTime = Math.max(0, SILENCE_TIMEOUT_SECONDS - 10);
 
     // Set warning countdown
     setTimeout(() => {
-      if (!mountedRef.current || profileDetectedRef.current) return;
+      if (
+        !mountedRef.current ||
+        profileDetectedRef.current ||
+        completionDetectedRef.current
+      )
+        return;
 
       let remaining = 10;
       setSilenceCountdown(remaining);
@@ -123,7 +155,8 @@ export function VoiceAgent({
         if (
           remaining <= 0 ||
           !mountedRef.current ||
-          profileDetectedRef.current
+          profileDetectedRef.current ||
+          completionDetectedRef.current
         ) {
           if (countdownIntervalRef.current) {
             clearInterval(countdownIntervalRef.current);
@@ -137,22 +170,26 @@ export function VoiceAgent({
 
     // Set main timeout
     silenceTimerRef.current = setTimeout(() => {
-      if (mountedRef.current && !profileDetectedRef.current) {
+      if (
+        mountedRef.current &&
+        !profileDetectedRef.current &&
+        !completionDetectedRef.current
+      ) {
         console.log("Silence timeout reached");
+        disconnect();
         onSilenceTimeout?.();
       }
     }, SILENCE_TIMEOUT_SECONDS * 1000);
-  }, [onSilenceTimeout]);
+  }, [onSilenceTimeout, disconnect]);
 
-  // Check for JSON profile in transcript
+  // Check for JSON profile in accumulated transcript
   const checkForProfile = useCallback(
-    (text: string) => {
-      // Look for JSON block in the assistant's message
-      const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+    (fullText: string) => {
+      // Look for JSON block in the accumulated text
+      const jsonMatch = fullText.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[1]);
-          // Accept profile with or without slug_confirmed (slug is now pre-set)
           if (parsed.twin_profile) {
             profileDetectedRef.current = true;
 
@@ -170,13 +207,43 @@ export function VoiceAgent({
 
             // Then call the callback
             onProfileDetected?.(parsed.twin_profile);
+            return true;
           }
         } catch {
-          // Not valid JSON, ignore
+          // Not valid JSON yet, might be partial
         }
       }
+      return false;
     },
     [onProfileDetected, disconnect]
+  );
+
+  // Check for completion phrases
+  const checkForCompletion = useCallback(
+    (text: string) => {
+      if (
+        !completionDetectedRef.current &&
+        !profileDetectedRef.current &&
+        isCompletionPhrase(text)
+      ) {
+        completionDetectedRef.current = true;
+        console.log("Completion phrase detected:", text);
+
+        // Give a small delay for the JSON to arrive, then check
+        setTimeout(() => {
+          if (!profileDetectedRef.current && mountedRef.current) {
+            // Check accumulated transcript for JSON
+            const found = checkForProfile(fullTranscriptTextRef.current);
+            if (!found) {
+              // If no JSON found yet, call completion callback
+              disconnect();
+              onCompletionDetected?.();
+            }
+          }
+        }, 2000); // Wait 2 seconds for JSON
+      }
+    },
+    [checkForProfile, disconnect, onCompletionDetected]
   );
 
   const handleTranscript = useCallback(
@@ -196,6 +263,9 @@ export function VoiceAgent({
       setTranscript(transcriptRef.current);
       onTranscriptUpdate?.(transcriptRef.current);
 
+      // Accumulate full text for JSON detection
+      fullTranscriptTextRef.current += " " + text;
+
       // Update display transcript (filter JSON from assistant messages)
       if (role === "assistant" && containsJsonProfile(text)) {
         // Don't add JSON-containing messages to display
@@ -212,10 +282,15 @@ export function VoiceAgent({
 
       // Check for profile in assistant messages
       if (role === "assistant") {
-        checkForProfile(text);
+        // First check if there's a JSON profile
+        const found = checkForProfile(fullTranscriptTextRef.current);
+        // If not, check for completion phrase
+        if (!found) {
+          checkForCompletion(text);
+        }
       }
     },
-    [onTranscriptUpdate, checkForProfile, resetSilenceTimer]
+    [onTranscriptUpdate, checkForProfile, checkForCompletion, resetSilenceTimer]
   );
 
   const connect = useCallback(async () => {
@@ -227,6 +302,8 @@ export function VoiceAgent({
     setIsConnecting(true);
     setError(null);
     profileDetectedRef.current = false;
+    completionDetectedRef.current = false;
+    fullTranscriptTextRef.current = "";
 
     try {
       // Get ephemeral token from our API
@@ -366,9 +443,9 @@ export function VoiceAgent({
         {error && <p className="text-destructive">{error}</p>}
       </div>
 
-      {/* Controls */}
-      <div className="flex gap-4">
-        {!isConnected ? (
+      {/* Controls - only show start button, not terminate */}
+      {showControls && !isConnected && (
+        <div className="flex gap-4">
           <Button
             size="lg"
             onClick={connect}
@@ -378,18 +455,8 @@ export function VoiceAgent({
             <Phone className="w-5 h-5" />
             {isConnecting ? "Connessione..." : "Avvia Conversazione"}
           </Button>
-        ) : (
-          <Button
-            size="lg"
-            variant="destructive"
-            onClick={disconnect}
-            className="gap-2"
-          >
-            <PhoneOff className="w-5 h-5" />
-            Termina
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Live Transcript Preview (optional) - uses filtered displayTranscript */}
       {showTranscript && displayTranscript.length > 0 && (

@@ -1,93 +1,108 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
-import { convert } from "pdf-img-convert";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Convert PDF to images and extract text using GPT-4 Vision
+// Extract text from PDF using OpenAI's base64 file input
 async function extractTextFromPDF(
   buffer: Buffer,
   fileName: string
 ): Promise<string> {
   try {
-    // Convert PDF pages to images (returns array of Uint8Array)
-    const images = await convert(buffer, {
-      scale: 2.0, // Higher quality
-    });
+    const base64 = buffer.toString("base64");
 
-    if (!images || images.length === 0) {
-      return `[PDF: ${fileName} - Nessuna pagina trovata]`;
-    }
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `Sei un estrattore di contenuti da documenti PDF. Estrai TUTTO il contenuto testuale dal documento.
 
-    // Process first 5 pages max to avoid token limits
-    const pagesToProcess = images.slice(0, 5);
-    const pageTexts: string[] = [];
-
-    for (let i = 0; i < pagesToProcess.length; i++) {
-      const imageData = pagesToProcess[i];
-      const base64 = Buffer.from(imageData).toString("base64");
-
-      try {
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o",
-          max_tokens: 2048,
-          messages: [
-            {
-              role: "system",
-              content: `Estrai TUTTO il testo visibile da questa pagina di documento.
-Per un CV o documento professionale, estrai:
-- Nome e contatti
-- Esperienza lavorativa (ruoli, aziende, date)
-- Formazione
-- Competenze e skills
+Per un CV o documento professionale, estrai in modo strutturato:
+- Nome completo e contatti (email, telefono, LinkedIn)
+- Riepilogo professionale / Obiettivi
+- Esperienza lavorativa (ruolo, azienda, date, responsabilità, risultati)
+- Formazione (titolo, istituto, date)
+- Competenze tecniche e soft skills
 - Certificazioni
-- Progetti
-- Lingue
+- Progetti rilevanti
+- Lingue parlate
+- Altre informazioni presenti
 
-Restituisci il testo in formato strutturato. NON inventare informazioni.`,
+Mantieni la struttura originale del documento. NON inventare informazioni non presenti.`,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              file: {
+                filename: fileName,
+                file_data: `data:application/pdf;base64,${base64}`,
+              },
             },
             {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: `Pagina ${i + 1} di "${fileName}":`,
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:image/png;base64,${base64}`,
-                    detail: "high",
-                  },
-                },
-              ],
+              type: "text",
+              text: "Estrai tutto il contenuto testuale da questo documento PDF.",
             },
           ],
-        });
+        },
+      ],
+      max_tokens: 4096,
+    });
 
-        const pageText = response.choices[0]?.message?.content;
-        if (pageText) {
-          pageTexts.push(`--- Pagina ${i + 1} ---\n${pageText}`);
-        }
-      } catch (pageError) {
-        console.error(`Error processing page ${i + 1}:`, pageError);
-        pageTexts.push(`--- Pagina ${i + 1} ---\n[Errore nell'estrazione]`);
-      }
-    }
-
-    if (images.length > 5) {
-      pageTexts.push(
-        `\n[Nota: Il documento ha ${images.length} pagine, elaborate le prime 5]`
-      );
-    }
-
-    return pageTexts.join("\n\n");
+    return response.choices[0]?.message?.content || "";
   } catch (error) {
-    console.error("PDF conversion error:", error);
-    return `[PDF: ${fileName} - Errore nella conversione]`;
+    console.error("PDF extraction error:", error);
+    return `[Errore nell'estrazione del PDF: ${fileName}]`;
+  }
+}
+
+// Extract text from image using GPT-4 Vision
+async function extractTextFromImage(
+  buffer: Buffer,
+  fileType: string,
+  fileName: string
+): Promise<string> {
+  try {
+    const base64 = buffer.toString("base64");
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_tokens: 4096,
+      messages: [
+        {
+          role: "system",
+          content: `Estrai TUTTO il testo visibile dall'immagine.
+Per un CV o documento professionale, estrai in modo strutturato tutte le informazioni presenti.
+NON inventare informazioni non presenti nell'immagine.`,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${fileType};base64,${base64}`,
+                detail: "high",
+              },
+            },
+            {
+              type: "text",
+              text: `Estrai tutto il testo da: "${fileName}"`,
+            },
+          ],
+        },
+      ],
+    });
+
+    return response.choices[0]?.message?.content || "";
+  } catch (error) {
+    console.error("Image extraction error:", error);
+    return "";
   }
 }
 
@@ -97,75 +112,31 @@ async function extractTextFromDocument(
   fileType: string,
   fileName: string
 ): Promise<string> {
-  try {
-    // For text files, just decode directly
-    if (fileType === "text/plain") {
-      return buffer.toString("utf-8");
-    }
-
-    // For PDFs, convert to images and use GPT-4 Vision
-    if (fileType === "application/pdf") {
-      return await extractTextFromPDF(buffer, fileName);
-    }
-
-    // For images, use GPT-4 Vision directly
-    if (fileType.startsWith("image/")) {
-      const base64 = buffer.toString("base64");
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        max_tokens: 4096,
-        messages: [
-          {
-            role: "system",
-            content: `Estrai TUTTO il testo visibile dall'immagine.
-Per un CV o documento professionale, estrai:
-- Nome e contatti
-- Esperienza lavorativa (ruoli, aziende, date)
-- Formazione
-- Competenze e skills
-- Certificazioni
-- Progetti
-- Lingue
-
-Restituisci il testo in formato strutturato. NON inventare informazioni.`,
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Estrai il testo da: "${fileName}"`,
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${fileType};base64,${base64}`,
-                  detail: "high",
-                },
-              },
-            ],
-          },
-        ],
-      });
-
-      return response.choices[0]?.message?.content || "";
-    }
-
-    // For Word documents
-    if (
-      fileType === "application/msword" ||
-      fileType ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      return `[Documento Word: ${fileName} - Carica una versione PDF per estrarre il contenuto]`;
-    }
-
-    return "";
-  } catch (error) {
-    console.error("Error extracting text:", error);
-    return "";
+  // For text files, just decode directly
+  if (fileType === "text/plain") {
+    return buffer.toString("utf-8");
   }
+
+  // For PDFs, use OpenAI's base64 file input
+  if (fileType === "application/pdf") {
+    return await extractTextFromPDF(buffer, fileName);
+  }
+
+  // For images, use GPT-4 Vision
+  if (fileType.startsWith("image/")) {
+    return await extractTextFromImage(buffer, fileType, fileName);
+  }
+
+  // For Word documents
+  if (
+    fileType === "application/msword" ||
+    fileType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return `[Documento Word: ${fileName} - Carica una versione PDF per estrarre il contenuto]`;
+  }
+
+  return "";
 }
 
 export async function POST(request: Request) {

@@ -241,15 +241,17 @@ export default function CreatePage() {
     }
   }, [preData, router]);
 
-  // Force save (skip waiting for profile)
-  const handleForceSave = useCallback(async () => {
-    setState("saving");
-    await saveWithFallback();
-  }, [saveWithFallback]);
+  // Handle silence timeout - redirect to home (don't create twin)
+  const handleSilenceTimeout = useCallback(() => {
+    console.log("Silence timeout - redirecting to home");
+    sessionStorage.removeItem("preInterviewData");
+    sessionStorage.removeItem("portfolioInfo");
+    router.push("/");
+  }, [router]);
 
-  // Handle silence timeout - auto save
-  const handleSilenceTimeout = useCallback(async () => {
-    console.log("Silence timeout - auto saving");
+  // Handle completion detected (AI said completion phrase but no JSON yet)
+  const handleCompletionDetected = useCallback(async () => {
+    console.log("Completion detected - saving with fallback profile");
     setState("saving");
     await saveWithFallback();
   }, [saveWithFallback]);
@@ -363,18 +365,11 @@ export default function CreatePage() {
                 onTranscriptUpdate={handleTranscriptUpdate}
                 onProfileDetected={handleProfileDetected}
                 onSilenceTimeout={handleSilenceTimeout}
+                onCompletionDetected={handleCompletionDetected}
                 autoConnect={true}
                 showTranscript={false}
+                showControls={false}
               />
-
-              {/* Force save button (visible after some questions) */}
-              {currentQuestion >= TOTAL_FIXED_QUESTIONS && (
-                <div className="mt-8">
-                  <Button variant="outline" size="sm" onClick={handleForceSave}>
-                    Termina e salva comunque
-                  </Button>
-                </div>
-              )}
             </div>
 
             {/* Transcript sidebar */}
@@ -386,7 +381,7 @@ export default function CreatePage() {
                 <div className="bg-card border border-border rounded-xl p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
                   {displayTranscript.length === 0 ? (
                     <p className="text-sm text-muted-foreground italic">
-                      La trascrizione apparirà qui...
+                      Quando sei pronto, di&apos; &quot;Sono pronto&quot;
                     </p>
                   ) : (
                     <div className="space-y-3">

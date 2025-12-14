@@ -1,18 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Code,
-  Users,
-  Briefcase,
-  Wrench,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-} from "lucide-react";
+import { Code, Users, Briefcase, Wrench, Loader2 } from "lucide-react";
 import type { Skill } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 
 interface SkillsTabProps {
   skills: Skill[];
@@ -66,8 +56,6 @@ const proficiencyLabels = {
 } as const;
 
 export function SkillsTab({ skills }: SkillsTabProps) {
-  const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
-
   if (!skills || skills.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -91,18 +79,6 @@ export function SkillsTab({ skills }: SkillsTabProps) {
     acc[skill.category].push(skill);
     return acc;
   }, {} as Record<string, Skill[]>);
-
-  const toggleSkillExpanded = (skillId: string) => {
-    setExpandedSkills((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(skillId)) {
-        newSet.delete(skillId);
-      } else {
-        newSet.add(skillId);
-      }
-      return newSet;
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -141,15 +117,12 @@ export function SkillsTab({ skills }: SkillsTabProps) {
 
               <div className="grid gap-3 mb-8">
                 {categorySkills.map((skill) => {
-                  const isExpanded = expandedSkills.has(skill.id);
-                  const hasEvidence = skill.evidence && skill.evidence.length > 0;
-
                   return (
                     <Card
                       key={skill.id}
                       className={`${info.borderColor} hover:border-primary/50 transition-colors`}
                     >
-                      <CardContent className="p-4">
+                      <CardContent className="px-4 py-1">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
@@ -162,11 +135,7 @@ export function SkillsTab({ skills }: SkillsTabProps) {
                                     proficiencyColors[skill.proficiency_level]
                                   }`}
                                 >
-                                  {
-                                    proficiencyLabels[
-                                      skill.proficiency_level
-                                    ]
-                                  }
+                                  {proficiencyLabels[skill.proficiency_level]}
                                 </span>
                               )}
                             </div>
@@ -174,28 +143,7 @@ export function SkillsTab({ skills }: SkillsTabProps) {
                             <div className="flex items-center gap-2 text-xs text-white">
                               <span className="capitalize">{skill.source}</span>
                             </div>
-
-                            {hasEvidence && isExpanded && (
-                              <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm italic text-white">
-                                &ldquo;{skill.evidence}&rdquo;
-                              </div>
-                            )}
                           </div>
-
-                          {hasEvidence && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => toggleSkillExpanded(skill.id)}
-                              className="shrink-0"
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </Button>
-                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -209,4 +157,3 @@ export function SkillsTab({ skills }: SkillsTabProps) {
     </div>
   );
 }
-

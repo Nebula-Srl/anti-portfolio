@@ -8,6 +8,7 @@ import {
 } from "@/lib/supabase/client";
 import { extractSkills } from "@/lib/openai/skills-extraction";
 import type { PortfolioInfo } from "@/lib/types";
+import { getRandomTheme } from "@/lib/themes";
 
 interface SaveTwinRequest {
   slug: string;
@@ -91,6 +92,9 @@ export async function POST(request: Request) {
     // Save to database
     const supabase = createServerSupabaseClient();
 
+    // Generate random theme for this twin
+    const theme = getRandomTheme();
+
     const { data, error } = await supabase
       .from("twins")
       .insert({
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
         documents: documents || [],
         documents_text: documentsText,
         is_public: true,
+        theme: theme,
       })
       .select("id, slug")
       .single();

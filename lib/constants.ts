@@ -41,7 +41,7 @@ export const INTERVIEW_QUESTIONS = [
 export const TOTAL_FIXED_QUESTIONS = INTERVIEW_QUESTIONS.length; // 14
 
 // Maximum follow-up questions after fixed ones
-export const MAX_FOLLOWUP_QUESTIONS = 2;
+export const MAX_FOLLOWUP_QUESTIONS = 5;
 
 // Total maximum questions (fixed + follow-up)
 export const MAX_TOTAL_QUESTIONS =

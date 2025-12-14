@@ -24,13 +24,7 @@ import {
   MAX_TOTAL_QUESTIONS,
   SILENCE_TIMEOUT_SECONDS,
 } from "@/lib/constants";
-import {
-  ArrowLeft,
-  Check,
-  Loader2,
-  LinkIcon,
-  MessageSquare,
-} from "lucide-react";
+import { ArrowLeft, Check, Loader2, MessageSquare } from "lucide-react";
 import { createDefaultProfile, type TwinProfile } from "@/lib/supabase/client";
 import type { PortfolioInfo, PreInterviewData } from "@/lib/types";
 
@@ -331,76 +325,162 @@ export default function CreatePage() {
 
         {/* Intro State */}
         {state === "intro" && preData && (
-          <div className="max-w-2xl mx-auto text-center py-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-6">
-              Pronto per l&apos;intervista
-            </h1>
-            <p className="text-lg text-white mb-8">
-              Appena sei pronto, TwinoAI ti farà alcune domande per creare il
-              tuo Digital Twin. Quando sei pronto, di&apos;{" "}
-              <strong>&quot;Sono pronto&quot;</strong> per iniziare.
-            </p>
-
-            {portfolioInfo?.name && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
-                <LinkIcon className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-500">
-                  Ciao {portfolioInfo.name}!
-                </span>
-              </div>
-            )}
-
-            <Card className="mb-6 bg-primary/5 border-primary/20">
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  Come interagire al meglio con l&apos;AI
-                </h3>
-                <ul className="text-sm text-white space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">•</span>
-                    <span>
-                      <strong>Usa esempi concreti:</strong> TwinoAI approfondirà
-                      le risposte più specifiche e dettagliate
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">•</span>
-                    <span>
-                      <strong>Chiedi chiarimenti:</strong> Se qualcosa non ti è
-                      chiaro, chiedi pure. TwinoAI è qui per aiutarti
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">•</span>
-                    <span>
-                      <strong>Parla naturalmente:</strong> Rispondi come in una
-                      conversazione normale, senza formalismi
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">•</span>
-                    <span>
-                      <strong>Sii te stesso:</strong> L&apos;obiettivo è
-                      catturare la tua personalità autentica
-                    </span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-              <p className="text-sm text-amber-600">
-                <strong>Importante:</strong> Di&apos; &quot;Sono pronto&quot;
-                per iniziare l&apos;intervista. Se rimani in silenzio per{" "}
-                {SILENCE_TIMEOUT_SECONDS} secondi, la conversazione terminerà
-                automaticamente.
+          <div className="max-10/12 mx-auto py-12">
+            {/* Header con saluto personalizzato */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Ciao{portfolioInfo?.name ? `, ${portfolioInfo.name}` : ""}!
+              </h1>
+              <p className="text-xl text-white mb-2">
+                <strong>
+                  Sei pronto a creare il tuo{" "}
+                  <span className="gradient-text">Twino</span>?
+                </strong>
+                <br />
+                Tra poco inizierà un&apos;intervista con domande pensate per
+                capire il <strong>tuo modo di pensare</strong>, non solo le tue
+                esperienze. Le tue risposte formeranno il tuo digital twin
+                conversazionale.
               </p>
             </div>
 
-            <Button size="lg" onClick={startInterview} className="gap-2">
-              Inizia l&apos;intervista
-            </Button>
+            {/* Introduzione all'intervista */}
+
+            <div className="flex flex-row gap-6">
+              {/* Cosa raccoglie Twino */}
+              <Card className="mb-6 bg-white/5 backdrop-blur-md border-white/10">
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-primary" />
+                    Ecco cosa Twino raccoglierà durante l&apos;intervista:
+                  </h3>
+                  <ul className="space-y-3 text-sm text-white">
+                    <li className="flex items-center gap-3">
+                      <span className="text-primary text-lg">→</span>
+                      <span>come analizzi un problema</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-primary text-lg">→</span>
+                      <span>come prendi decisioni con poche informazioni</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-primary text-lg">→</span>
+                      <span>che esempi porti spontaneamente</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-primary text-lg">→</span>
+                      <span>
+                        quali errori riconosci e come li hai trasformati
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-primary text-lg">→</span>
+                      <span>come descrivi il tuo metodo di lavoro</span>
+                    </li>
+                  </ul>
+                  <p className="mt-4 text-sm text-white/80 italic">
+                    L&apos;obiettivo non è raccontare chi sei, ma{" "}
+                    <strong>come pensi</strong> e qual è il tuo approccio.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Suggerimenti per ottenere il miglior risultato */}
+              <Card className="mb-8 bg-primary/5 border-primary/20">
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold text-lg mb-4">
+                    Per ottenere il miglior digital twin possibile, prova a
+                    rispondere usando:
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-primary flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                          1
+                        </span>
+                        Fornisci esempi concreti
+                      </h4>
+                      <p className="text-sm text-white/80 ml-8">
+                        Le risposte astratte non aiutano l&apos;AI. Meglio dire:{" "}
+                        <em>&quot;Ti racconto un episodio in cui…&quot;</em>
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-primary flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                          2
+                        </span>
+                        Mostra il tuo ragionamento, non solo il risultato finale
+                      </h4>
+                      <p className="text-sm text-white/80 ml-8">
+                        L&apos;AI comprende il tuo metodo se spieghi cosa hai
+                        pensato, quali alternative hai considerato e perché hai
+                        scelto X invece di Y.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-primary flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                          3
+                        </span>
+                        Parla come faresti in una conversazione tra amici
+                      </h4>
+                      <p className="text-sm text-white/80 ml-8">
+                        Niente formalismi, evita il &quot;linguaggio da
+                        colloquio&quot;.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-primary flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                          4
+                        </span>
+                        Non cercare di impressionare
+                      </h4>
+                      <p className="text-sm text-white/80 ml-8">
+                        Twino funziona meglio con dubbi, incertezze, errori
+                        reali e aspetti che oggi faresti diversamente.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-primary flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                          5
+                        </span>
+                        Se necessario, chiedi una domanda diversa
+                      </h4>
+                      <p className="text-sm text-white/80 ml-8">
+                        Puoi dire:{" "}
+                        <em>
+                          &quot;Non so se ho capito, puoi riformularla?&quot;
+                        </em>{" "}
+                        o{" "}
+                        <em>
+                          &quot;Possiamo esplorare un altro aspetto?&quot;
+                        </em>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* CTA e note finali */}
+            <div className="text-center space-y-4">
+              <Button
+                size="lg"
+                onClick={startInterview}
+                className="gap-2 text-lg px-8 py-6"
+              >
+                <MessageSquare className="w-5 h-5" />
+                Inizia l&apos;intervista
+              </Button>
+            </div>
           </div>
         )}
 

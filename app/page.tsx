@@ -559,7 +559,9 @@ export default function LandingPage() {
                   Nome del Twin *
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-white text-sm shrink-0">twin.app/</span>
+                  <span className="text-white text-sm shrink-0">
+                    twin.app/t/
+                  </span>
                   <div className="relative flex-1">
                     <Input
                       value={slug}
@@ -625,11 +627,8 @@ export default function LandingPage() {
                 <p className="text-xs text-white mb-3">
                   Carica CV, portfolio PDF o altri documenti per arricchire il
                   tuo profilo. <strong>Massimo 4MB</strong>. Formati accettati:
-                  PDF, DOC, DOCX, TXT, JPG, PNG.
+                  PDF, DOC, DOCX, TXT
                   <br />
-                  <span className="text-amber-500 text-[11px]">
-                    💡 Suggerimento: comprimi i PDF grandi prima di caricarli.
-                  </span>
                 </p>
 
                 <input
@@ -659,7 +658,9 @@ export default function LandingPage() {
                   ) : (
                     <Upload className="w-4 h-4" />
                   )}
-                  {isUploading ? "Caricamento..." : "Carica documento"}
+                  {isUploading
+                    ? "Stiamo analizzando il documento..."
+                    : "Carica documento"}
                 </Button>
 
                 {slug.length < 3 && (

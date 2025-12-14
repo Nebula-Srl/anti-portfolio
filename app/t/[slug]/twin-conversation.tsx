@@ -253,8 +253,10 @@ export function TwinConversation({
 
 function getSuggestedQuestions(): string[] {
   return [
-    `Raccontami di te`,
     `Come affronti i problemi complessi?`,
+    `Raccontami un'esperienza significativa`,
     `Qual è stata la tua sfida più grande?`,
+    `Come ti comporti quando lavori in team?`,
+    `Cosa ti motiva maggiormente nel tuo lavoro?`,
   ];
 }

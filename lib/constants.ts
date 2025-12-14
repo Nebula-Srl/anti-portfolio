@@ -5,26 +5,26 @@
 // Fixed interview questions (Italian) - organized by category
 export const INTERVIEW_QUESTIONS = [
   // 1. Background & percorso
-  "Da dove vieni e qual è stato il tuo percorso fino ad oggi?",
+  "Raccontami di te e qual è il tuo percorso lavorativo fino ad oggi?",
   "C'è stato un momento che ti ha fatto cambiare strada nel lavoro?",
 
   // 2. Ruolo & competenze
-  "Cosa fai davvero nel tuo lavoro, senza usare il job title?",
+  "Prova a spiegarmi cosa fai davvero nel tuo lavoro, senza usare il job title?",
   "In cosa senti di fare davvero la differenza?",
   "Quali strumenti software usi ogni giorno?",
+  "Sperimenti nuove tecnologie? se si, in che modo?",
 
   // 3. Progetti significativi
   "Qual è il progetto che ti rappresenta di più? Perché?",
 
   // 4. Metodologia
-  "Quando hai un problema poco chiaro, cosa fai per prima cosa?",
-  "Come decidi quando ti mancano informazioni? Fammi un esempio.",
+  "Quando affronti una sfida o un problema che inizialmente non è del tutto chiaro come procedi per chiarirlo e trovare una soluzione?",
 
   // 5. Valori
-  "Su quale valore professionale non scendi mai a compromessi?",
+  "Su quale valore professionale non scendi mai a compromessi? Se vuoi un esempio basta chiedere!",
 
   // 6. Passioni
-  "In quale attività lavorativa il tempo vola senza accorgertene?",
+  "Quali attività ti danno più soddisfazione nel tuo percorso lavorativo? Anche qui se vuoi un esempio basta chiedere!",
 
   // 7. Limiti & frustrazioni
   "Qual è una situazione che ti toglie energie quando lavori?",

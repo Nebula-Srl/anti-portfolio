@@ -63,7 +63,10 @@ export function DocumentsTab({ documents }: DocumentsTabProps) {
 
       <div className="grid gap-4">
         {documents.map((doc, index) => (
-          <Card key={index} className="hover:border-primary/50 transition-colors">
+          <Card
+            key={index}
+            className="hover:border-primary/50 transition-colors"
+          >
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div
@@ -117,6 +120,8 @@ export function DocumentsTab({ documents }: DocumentsTabProps) {
                       const link = document.createElement("a");
                       link.href = doc.url;
                       link.download = doc.name;
+                      link.target = "_blank";
+                      link.rel = "noopener noreferrer";
                       link.click();
                     }}
                     className="gap-2"
@@ -132,4 +137,3 @@ export function DocumentsTab({ documents }: DocumentsTabProps) {
     </div>
   );
 }
-

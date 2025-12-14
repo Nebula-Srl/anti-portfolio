@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Code, Users, Briefcase, Wrench, Loader2 } from "lucide-react";
 import type { Skill } from "@/lib/supabase/client";
 
@@ -16,6 +15,9 @@ const categoryInfo = {
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
     borderColor: "border-blue-500/20",
+    chipBg: "bg-blue-500/20",
+    chipBorder: "border-blue-500/30",
+    chipText: "text-blue-100",
   },
   soft: {
     label: "Soft Skills",
@@ -23,6 +25,9 @@ const categoryInfo = {
     color: "text-green-500",
     bgColor: "bg-green-500/10",
     borderColor: "border-green-500/20",
+    chipBg: "bg-green-500/20",
+    chipBorder: "border-green-500/30",
+    chipText: "text-green-100",
   },
   domain: {
     label: "Competenze di Dominio",
@@ -30,6 +35,9 @@ const categoryInfo = {
     color: "text-purple-500",
     bgColor: "bg-purple-500/10",
     borderColor: "border-purple-500/20",
+    chipBg: "bg-purple-500/20",
+    chipBorder: "border-purple-500/30",
+    chipText: "text-purple-100",
   },
   tools: {
     label: "Strumenti",
@@ -37,22 +45,10 @@ const categoryInfo = {
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
     borderColor: "border-amber-500/20",
+    chipBg: "bg-amber-500/20",
+    chipBorder: "border-amber-500/30",
+    chipText: "text-amber-100",
   },
-} as const;
-
-// Proficiency level badges
-const proficiencyColors = {
-  beginner: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-  intermediate: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  advanced: "bg-green-500/10 text-green-600 border-green-500/20",
-  expert: "bg-purple-500/10 text-purple-600 border-purple-500/20",
-} as const;
-
-const proficiencyLabels = {
-  beginner: "Base",
-  intermediate: "Intermedio",
-  advanced: "Avanzato",
-  expert: "Esperto",
 } as const;
 
 export function SkillsTab({ skills }: SkillsTabProps) {
@@ -115,38 +111,15 @@ export function SkillsTab({ skills }: SkillsTabProps) {
                 </div>
               </div>
 
-              <div className="grid gap-3 mb-8">
+              <div className="flex flex-wrap gap-2 mb-8">
                 {categorySkills.map((skill) => {
                   return (
-                    <Card
+                    <span
                       key={skill.id}
-                      className={`${info.borderColor} hover:border-primary/50 transition-colors`}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all hover:scale-105 ${info.chipBg} ${info.chipBorder} ${info.chipText}`}
                     >
-                      <CardContent className="px-4 py-1">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-base">
-                                {skill.skill_name}
-                              </h4>
-                              {skill.proficiency_level && (
-                                <span
-                                  className={`text-xs px-2 py-0.5 rounded-full border ${
-                                    proficiencyColors[skill.proficiency_level]
-                                  }`}
-                                >
-                                  {proficiencyLabels[skill.proficiency_level]}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-2 text-xs text-white">
-                              <span className="capitalize">{skill.source}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      {skill.skill_name}
+                    </span>
                   );
                 })}
               </div>

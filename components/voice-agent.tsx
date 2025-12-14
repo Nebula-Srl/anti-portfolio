@@ -11,7 +11,7 @@ import {
   SILENCE_TIMEOUT_SECONDS,
 } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Phone, Clock, StopCircle } from "lucide-react";
+import { Mic, MicOff, Phone, StopCircle } from "lucide-react";
 import { AudioVisualizer } from "./audio-visualizer";
 
 interface TranscriptEntry {
@@ -291,7 +291,7 @@ export function VoiceAgent({
         if (!hasReceivedFirstMessage) {
           setHasReceivedFirstMessage(true);
         }
-        
+
         // First check if there's a JSON profile
         const found = checkForProfile(fullTranscriptTextRef.current);
         // If not, check for completion phrase
@@ -420,9 +420,15 @@ export function VoiceAgent({
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Mic className="w-8 h-8 text-primary animate-pulse" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Inizia quando sei pronto</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              Inizia quando sei pronto
+            </h3>
             <p className="text-muted-foreground mb-4">
-              Pronuncia <strong className="text-foreground">&quot;Sono pronto&quot;</strong> quando vuoi iniziare l&apos;intervista
+              Pronuncia{" "}
+              <strong className="text-foreground">
+                &quot;Sono pronto&quot;
+              </strong>{" "}
+              quando vuoi iniziare l&apos;intervista
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -432,28 +438,13 @@ export function VoiceAgent({
         </div>
       )}
 
-      {/* Audio Visualizer with centered button */}
-      <div className="relative flex items-center justify-center">
+      {/* Audio Visualizer - only shows interaction when speaking */}
+      <div className="relative flex items-center justify-center mb-6">
         <AudioVisualizer
           isActive={isConnected}
           isSpeaking={isSpeaking}
           size={180}
         />
-        
-        {/* Start button in center of circle (only when not connected) */}
-        {showControls && !isConnected && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              size="lg"
-              onClick={connect}
-              disabled={isConnecting}
-              className="gap-2 rounded-full w-16 h-16 p-0"
-              title="Avvia Conversazione"
-            >
-              <Phone className="w-6 h-6" />
-            </Button>
-          </div>
-        )}
 
         {/* Stop button in center (when connected and showStopButton is true) */}
         {showStopButton && isConnected && (
@@ -470,6 +461,19 @@ export function VoiceAgent({
           </div>
         )}
       </div>
+
+      {/* Start button below visualizer (only when not connected and controls visible) */}
+      {showControls && !isConnected && (
+        <Button
+          size="lg"
+          onClick={connect}
+          disabled={isConnecting}
+          className="gap-2"
+        >
+          <Phone className="w-5 h-5" />
+          Avvia Conversazione
+        </Button>
+      )}
 
       {/* Status */}
       <div className="text-center">
@@ -489,16 +493,6 @@ export function VoiceAgent({
             L&apos;AI sta parlando...
           </p>
         )}
-
-        {/* Silence countdown warning */}
-        {silenceCountdown !== null &&
-          silenceCountdown > 0 &&
-          silenceCountdown < 10 && (
-            <p className="text-amber-500 flex items-center gap-2 justify-center mt-2 text-sm">
-              <Clock className="w-4 h-4" />
-              Silenzio rilevato. Disconnessione in {silenceCountdown}s...
-            </p>
-          )}
 
         {error && <p className="text-destructive">{error}</p>}
       </div>

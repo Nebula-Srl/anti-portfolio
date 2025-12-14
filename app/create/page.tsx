@@ -325,9 +325,9 @@ export default function CreatePage() {
 
         {/* Intro State */}
         {state === "intro" && preData && (
-          <div className="max-10/12 mx-auto py-12">
+          <div className="max-10/12 mx-auto py-6">
             {/* Header con saluto personalizzato */}
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Ciao{portfolioInfo?.name ? `, ${portfolioInfo.name}` : ""}!
               </h1>
@@ -343,7 +343,17 @@ export default function CreatePage() {
                 conversazionale.
               </p>
             </div>
-
+            {/* CTA e note finali */}
+            <div className="text-center space-y-4 mb-8">
+              <Button
+                size="lg"
+                onClick={startInterview}
+                className="gap-2 text-lg px-8 py-6"
+              >
+                <MessageSquare className="w-5 h-5" />
+                Inizia l&apos;intervista
+              </Button>
+            </div>
             {/* Introduzione all'intervista */}
 
             <div className="flex flex-row gap-6">
@@ -469,18 +479,6 @@ export default function CreatePage() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* CTA e note finali */}
-            <div className="text-center space-y-4">
-              <Button
-                size="lg"
-                onClick={startInterview}
-                className="gap-2 text-lg px-8 py-6"
-              >
-                <MessageSquare className="w-5 h-5" />
-                Inizia l&apos;intervista
-              </Button>
-            </div>
           </div>
         )}
 
@@ -515,6 +513,10 @@ export default function CreatePage() {
                 <h3 className="text-sm font-medium mb-3 text-white">
                   Trascrizione
                 </h3>
+                <p className="text-sm text-white italic mb-4 font-bold bg-amber-500/13 p-2 rounded-lg">
+                  Se hai dei dubbi, puoi chiedere a TwinoAi di riformulare la
+                  domanda o fornire degli esempi!
+                </p>
                 <div className="bg-card border border-border rounded-xl p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
                   {displayTranscript.length === 0 ? (
                     <p className="text-sm text-white italic">

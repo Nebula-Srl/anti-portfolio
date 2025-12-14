@@ -49,9 +49,9 @@ ${context}
 ISTRUZIONI:
 1. Identifica competenze in 4 categorie:
    - technical: linguaggi programmazione, framework, tecnologie specifiche
-   - soft: comunicazione, leadership, problem-solving, teamwork, etc.
-   - domain: conoscenze settoriali (es: marketing, finanza, design UX)
-   - tools: software, piattaforme, strumenti specifici (es: Figma, Jira, Excel)
+   - soft: comunicazione, leadership, problem-solving, teamwork, creatività, etc.
+   - domain: conoscenze settoriali (es: marketing, finanza, design UX, gestione progetti)
+   - tools: software, piattaforme, strumenti specifici (es: Figma, Jira, Excel, VS Code)
 
 2. Per ogni skill, determina il livello di competenza basandoti su:
    - beginner: menzionato ma senza esperienza dettagliata
@@ -63,14 +63,17 @@ ISTRUZIONI:
 
 4. Indica la fonte: 'interview', 'document', o 'portfolio'
 
-REGOLE:
-- Estrai SOLO competenze esplicitamente menzionate o chiaramente dimostrate
-- NON inventare competenze
-- Se il livello non è chiaro, ometti proficiency_level
+REGOLE FONDAMENTALI:
+- Estrai TUTTE le competenze menzionate esplicitamente O chiaramente dimostrate
+- Se la persona parla del suo lavoro/progetti, DEDUCI le competenze tecniche/tools usate
+- Estrai SEMPRE almeno 5-10 skills diverse
+- Includi soft skills basandoti su come si esprime (es: problem-solving, comunicazione, lavoro di squadra)
+- Se il livello non è chiaro, usa 'intermediate' come default
 - Sii specifico (es: "React" non "JavaScript frameworks")
-- Includi sia hard skills che soft skills
+- NON lasciare l'array vuoto - ci devono SEMPRE essere skills
+- Se l'intervista è breve, estrai comunque quello che c'è
 
-Restituisci un JSON array di skills:
+ESEMPIO OUTPUT (MINIMO 5 SKILLS):
 
 \`\`\`json
 [
@@ -81,11 +84,24 @@ Restituisci un JSON array di skills:
     "evidence": "Ho sviluppato 3 app con React negli ultimi 2 anni",
     "source": "interview"
   },
-  ...
+  {
+    "skill_name": "Problem Solving",
+    "category": "soft",
+    "proficiency_level": "advanced",
+    "evidence": "Affronto problemi complessi scomponendoli in parti",
+    "source": "interview"
+  },
+  {
+    "skill_name": "TypeScript",
+    "category": "technical",
+    "proficiency_level": "intermediate",
+    "evidence": "Uso TypeScript per i progetti frontend",
+    "source": "document"
+  }
 ]
 \`\`\`
 
-Rispondi SOLO con il JSON array, senza altro testo.`;
+IMPORTANTE: Rispondi SOLO con il JSON array completo. DEVI estrarre ALMENO 5-10 skills. NON restituire un array vuoto.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -93,7 +109,7 @@ Rispondi SOLO con il JSON array, senza altro testo.`;
         {
           role: "system",
           content:
-            "Sei un esperto HR/recruiter specializzato nell'identificazione di competenze professionali. Estrai skills in modo preciso e strutturato.",
+            "Sei un esperto HR/recruiter specializzato nell'identificazione di competenze professionali. Il tuo compito è estrarre SEMPRE almeno 5-10 skills da qualsiasi trascrizione. Sii proattivo nell'identificare competenze anche da informazioni implicite.",
         },
         {
           role: "user",
@@ -112,18 +128,85 @@ Rispondi SOLO con il JSON array, senza altro testo.`;
 
     const extracted: SkillExtraction[] = JSON.parse(jsonStr);
 
-    // Validate and return
-    return extracted.filter(
+    // Validate and filter
+    const validSkills = extracted.filter(
       (skill) =>
         skill.skill_name &&
         skill.category &&
         ["technical", "soft", "domain", "tools"].includes(skill.category) &&
         ["interview", "document", "portfolio"].includes(skill.source)
     );
+
+    // If we got valid skills, return them
+    if (validSkills.length > 0) {
+      console.log(`✓ Extracted ${validSkills.length} skills successfully`);
+      return validSkills;
+    }
+
+    // If extraction returned empty, try to generate basic skills from context
+    console.warn("⚠ Skills extraction returned empty array, generating fallback skills");
+    return generateFallbackSkills(transcript, portfolioInfo);
   } catch (error) {
     console.error("Skills extraction error:", error);
-    // Return empty array on error - don't fail the whole process
-    return [];
+    // Try to generate basic fallback skills instead of returning empty
+    return generateFallbackSkills(transcript, portfolioInfo);
   }
+}
+
+/**
+ * Generate basic fallback skills from transcript and portfolio info
+ * Used when GPT extraction fails
+ */
+function generateFallbackSkills(
+  transcript: string,
+  portfolioInfo?: PortfolioInfo | null
+): Omit<Skill, "id" | "twin_id" | "created_at">[] {
+  const fallbackSkills: Omit<Skill, "id" | "twin_id" | "created_at">[] = [];
+
+  // Extract from portfolio info if available
+  if (portfolioInfo?.skills && portfolioInfo.skills.length > 0) {
+    portfolioInfo.skills.slice(0, 10).forEach((skillName) => {
+      fallbackSkills.push({
+        skill_name: skillName,
+        category: "technical",
+        proficiency_level: "intermediate",
+        evidence: "Menzionato nel portfolio",
+        source: "portfolio",
+      });
+    });
+  }
+
+  if (portfolioInfo?.occupation) {
+    fallbackSkills.push({
+      skill_name: portfolioInfo.occupation,
+      category: "domain",
+      proficiency_level: "intermediate",
+      evidence: `Ruolo: ${portfolioInfo.occupation}`,
+      source: "portfolio",
+    });
+  }
+
+  // Add generic soft skills based on having completed an interview
+  if (transcript.length > 100) {
+    fallbackSkills.push(
+      {
+        skill_name: "Comunicazione",
+        category: "soft",
+        proficiency_level: "intermediate",
+        evidence: "Capacità di comunicare le proprie esperienze",
+        source: "interview",
+      },
+      {
+        skill_name: "Pensiero Critico",
+        category: "soft",
+        proficiency_level: "intermediate",
+        evidence: "Capacità di analisi e riflessione",
+        source: "interview",
+      }
+    );
+  }
+
+  console.log(`Generated ${fallbackSkills.length} fallback skills`);
+  return fallbackSkills;
 }
 

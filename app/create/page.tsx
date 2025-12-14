@@ -144,7 +144,7 @@ export default function CreatePage() {
         const fullTranscript = transcriptRef.current
           .map(
             (entry) =>
-              `${entry.role === "user" ? "UTENTE" : "AI"}: ${entry.text}`
+              `${entry.role === "user" ? "UTENTE" : "TwinoAI"}: ${entry.text}`
           )
           .join("\n\n");
 
@@ -196,7 +196,7 @@ export default function CreatePage() {
     [preData, portfolioInfo, router]
   );
 
-  // Fallback save with minimal data
+  // Fallback save with AI-extracted profile from transcript
   const saveWithFallback = useCallback(async () => {
     if (!preData) {
       setError("Dati mancanti. Riprova.");
@@ -208,9 +208,38 @@ export default function CreatePage() {
       // Use ref for latest transcript
       const fullTranscript = transcriptRef.current
         .map(
-          (entry) => `${entry.role === "user" ? "UTENTE" : "AI"}: ${entry.text}`
+          (entry) =>
+            `${entry.role === "user" ? "UTENTE" : "TwinoAI"}: ${entry.text}`
         )
         .join("\n\n");
+
+      // Try to extract profile from transcript using AI
+      let extractedProfile = createDefaultProfile();
+
+      if (fullTranscript && fullTranscript.length > 100) {
+        try {
+          // Call API to extract profile
+          const extractResponse = await fetch("/api/twins/extract-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              transcript: fullTranscript,
+              documents: preData.documents,
+            }),
+          });
+
+          if (extractResponse.ok) {
+            const extractData = await extractResponse.json();
+            if (extractData.success && extractData.profile) {
+              extractedProfile = extractData.profile;
+              console.log("Successfully extracted profile from transcript");
+            }
+          }
+        } catch (err) {
+          console.error("Profile extraction error:", err);
+          // Continue with default profile
+        }
+      }
 
       const saveResponse = await fetch("/api/twins/save", {
         method: "POST",
@@ -218,9 +247,10 @@ export default function CreatePage() {
         body: JSON.stringify({
           slug: preData.slug,
           email: preData.email,
-          profile: createDefaultProfile(),
+          profile: extractedProfile,
           transcript: fullTranscript || "-",
           documents: preData.documents,
+          portfolioInfo: portfolioInfo,
         }),
       });
 
@@ -241,7 +271,7 @@ export default function CreatePage() {
       setError("Errore nel salvataggio. Riprova.");
       setState("error");
     }
-  }, [preData, router]);
+  }, [preData, portfolioInfo, router]);
 
   // Retry from error
   const handleRetry = useCallback(() => {
@@ -306,8 +336,8 @@ export default function CreatePage() {
               Pronto per l&apos;intervista
             </h1>
             <p className="text-lg text-white mb-8">
-              Ora parlerai con l&apos;AI che ti farà alcune domande per creare
-              il tuo Digital Twin. Quando sei pronto, di&apos;{" "}
+              Appena sei pronto, TwinoAI ti farà alcune domande per creare il
+              tuo Digital Twin. Quando sei pronto, di&apos;{" "}
               <strong>&quot;Sono pronto&quot;</strong> per iniziare.
             </p>
 
@@ -330,15 +360,15 @@ export default function CreatePage() {
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-0.5">•</span>
                     <span>
-                      <strong>Usa esempi concreti:</strong> L&apos;AI
-                      approfondirà le risposte più specifiche e dettagliate
+                      <strong>Usa esempi concreti:</strong> TwinoAI approfondirà
+                      le risposte più specifiche e dettagliate
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-0.5">•</span>
                     <span>
                       <strong>Chiedi chiarimenti:</strong> Se qualcosa non ti è
-                      chiaro, chiedi pure. L&apos;AI è qui per aiutarti
+                      chiaro, chiedi pure. TwinoAI è qui per aiutarti
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -422,7 +452,7 @@ export default function CreatePage() {
                           }`}
                         >
                           <span className="font-medium block mb-1 text-xs uppercase tracking-wide opacity-60">
-                            {entry.role === "user" ? "Tu" : "AI"}
+                            {entry.role === "user" ? "Tu" : "TwinoAI"}
                           </span>
                           {entry.text}
                         </div>

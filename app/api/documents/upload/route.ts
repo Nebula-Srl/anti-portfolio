@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
+// Configure route to handle larger payloads
+export const dynamic = "force-dynamic";
+export const maxDuration = 60; // 60 seconds for file processing
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -176,11 +180,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Max 25MB
-    if (file.size > 25 * 1024 * 1024) {
+    // Max 4MB (Vercel body limit is ~4.5MB)
+    const maxSize = 4 * 1024 * 1024;
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "File troppo grande. Massimo 25MB." },
-        { status: 400 }
+        { error: "File troppo grande. Massimo 4MB." },
+        { status: 413 }
       );
     }
 

@@ -72,7 +72,8 @@ export const RATE_LIMIT_MAX_REQUESTS = 10;
 // UPLOAD CONFIG
 // ==========================================
 
-export const MAX_UPLOAD_SIZE_MB = 25;
+// Max 4MB to stay safely within Vercel's body limit (~4.5MB)
+export const MAX_UPLOAD_SIZE_MB = 4;
 
 // ==========================================
 // OPENAI CONFIG

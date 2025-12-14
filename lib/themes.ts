@@ -144,3 +144,4 @@ export function getThemeCSSVars(theme: Theme): Record<string, string> {
     "--twin-glow": theme.glowColor,
   };
 }
+

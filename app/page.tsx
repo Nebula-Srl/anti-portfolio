@@ -157,6 +157,13 @@ export default function LandingPage() {
       setIsUploading(true);
 
       for (const file of Array.from(files)) {
+        // Validate file size (4MB max - Vercel limitation)
+        const maxSize = 4 * 1024 * 1024; // 4MB in bytes
+        if (file.size > maxSize) {
+          toast.error(`Il file "${file.name}" supera i 4MB. Per favore comprimi il PDF o usa un file più piccolo.`);
+          continue;
+        }
+
         try {
           const formData = new FormData();
           formData.append("file", file);
@@ -170,9 +177,13 @@ export default function LandingPage() {
           if (response.ok) {
             const data = await response.json();
             setDocuments((prev) => [...prev, data.document]);
+          } else {
+            const error = await response.json();
+            toast.error(error.error || `Errore durante il caricamento di "${file.name}"`);
           }
         } catch (err) {
           console.error("Upload error:", err);
+          toast.error(`Errore durante il caricamento di "${file.name}"`);
         }
       }
 
@@ -189,12 +200,39 @@ export default function LandingPage() {
     setDocuments((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Validate portfolio URL
+  const validatePortfolioUrl = useCallback((url: string): boolean => {
+    if (!url.trim()) return true; // Empty is allowed (optional)
+    
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      // Check if the hostname contains one of the allowed domains
+      const allowedDomains = ['linkedin.com', 'behance.net', 'github.com'];
+      const isValid = allowedDomains.some(domain => 
+        hostname === domain || hostname.endsWith(`.${domain}`)
+      );
+      
+      return isValid;
+    } catch {
+      return false; // Invalid URL format
+    }
+  }, []);
+
   // Open modal and start analysis
   const handleOpenModal = useCallback(async () => {
     if (!portfolioUrl.trim()) {
       toast.error("Link al portfolio richiesto");
       return;
     }
+    
+    // Validate portfolio URL
+    if (!validatePortfolioUrl(portfolioUrl)) {
+      toast.error("Per favore inserisci un link valido da LinkedIn, Behance o GitHub");
+      return;
+    }
+    
     // Reset form first
     resetModalForm();
 
@@ -231,7 +269,7 @@ export default function LandingPage() {
       }
       setIsAnalyzing(false);
     }
-  }, [portfolioUrl, resetModalForm]);
+  }, [portfolioUrl, resetModalForm, validatePortfolioUrl]);
 
   // Submit and go to interview
   const handleSubmit = useCallback(async () => {
@@ -343,6 +381,10 @@ export default function LandingPage() {
                   className="pl-10 h-12 bg-card border-border text-base"
                 />
               </div>
+              
+              <p className="text-xs text-white/70 text-center -mt-2">
+                Accettiamo solo link da: <strong>LinkedIn</strong>, <strong>GitHub</strong> o <strong>Behance</strong>
+              </p>
 
               <Button
                 size="lg"
@@ -575,7 +617,9 @@ export default function LandingPage() {
                 </label>
                 <p className="text-xs text-white mb-3">
                   Carica CV, portfolio PDF o altri documenti per arricchire il
-                  tuo profilo.
+                  tuo profilo. <strong>Massimo 4MB</strong>. Formati accettati: PDF, DOC, DOCX, TXT, JPG, PNG.
+                  <br />
+                  <span className="text-amber-500 text-[11px]">💡 Suggerimento: comprimi i PDF grandi prima di caricarli.</span>
                 </p>
 
                 <input

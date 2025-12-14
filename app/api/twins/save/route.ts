@@ -169,15 +169,33 @@ async function extractAndSaveSkills(
   documentsText: string | null,
   portfolioInfo?: PortfolioInfo
 ) {
+  const startTime = Date.now();
+  console.log(`[Skills Extraction] Starting for twin ${twinId}`);
+
   try {
+    // Ensure transcript is valid
+    if (!transcript || transcript === "-" || transcript.length < 50) {
+      console.warn(
+        `[Skills Extraction] Transcript too short for twin ${twinId} (${transcript.length} chars)`
+      );
+      // Still try with portfolio info if available
+    }
+
     const skills = await extractSkills(
       transcript,
       documentsText,
       portfolioInfo
     );
 
+    const duration = Date.now() - startTime;
+    console.log(
+      `[Skills Extraction] Completed in ${duration}ms - found ${skills.length} skills for twin ${twinId}`
+    );
+
     if (skills.length === 0) {
-      console.log(`No skills extracted for twin ${twinId}`);
+      console.error(
+        `[Skills Extraction] ⚠️ WARNING: No skills extracted for twin ${twinId} - this should not happen with fallback enabled!`
+      );
       return;
     }
 
@@ -196,12 +214,18 @@ async function extractAndSaveSkills(
     const { error } = await supabase.from("skills").insert(skillsToInsert);
 
     if (error) {
-      console.error("Error saving skills:", error);
-    } else {
-      console.log(`Saved ${skills.length} skills for twin ${twinId}`);
+      console.error(`[Skills Extraction] Error saving skills for twin ${twinId}:`, error);
+      throw error;
     }
+
+    console.log(
+      `[Skills Extraction] ✓ Successfully saved ${skills.length} skills for twin ${twinId}`
+    );
   } catch (error) {
-    console.error("Skills extraction/save error:", error);
-    // Don't throw - this is non-blocking
+    console.error(
+      `[Skills Extraction] ❌ Fatal error for twin ${twinId}:`,
+      error
+    );
+    // Don't throw - this is non-blocking, but log prominently
   }
 }

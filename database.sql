@@ -310,3 +310,4 @@ BEGIN
   RAISE NOTICE '⚡ Indexes created for performance';
   RAISE NOTICE '🎯 Ready to use!';
 END $$;
+

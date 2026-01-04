@@ -1,216 +1,285 @@
 /**
  * OpenAI Realtime API Client
- * 
+ *
  * Handles WebRTC connection to OpenAI's speech-to-speech API
  * Based on: https://platform.openai.com/docs/guides/voice-agents
  */
 
 export interface RealtimeConfig {
-  token: string
-  model: string
-  voice: string
-  systemPrompt: string
-  onTranscript?: (text: string, role: 'user' | 'assistant') => void
-  onAudioStart?: () => void
-  onAudioEnd?: () => void
-  onError?: (error: Error) => void
-  onConnectionChange?: (connected: boolean) => void
+  token: string;
+  model: string;
+  voice: string;
+  systemPrompt: string;
+  onTranscript?: (text: string, role: "user" | "assistant") => void;
+  onAudioStart?: () => void;
+  onAudioEnd?: () => void;
+  onError?: (error: Error) => void;
+  onConnectionChange?: (connected: boolean) => void;
 }
 
 export interface RealtimeClient {
-  connect: () => Promise<void>
-  disconnect: () => void
-  isConnected: () => boolean
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  isConnected: () => boolean;
 }
 
 export function createRealtimeClient(config: RealtimeConfig): RealtimeClient {
-  let peerConnection: RTCPeerConnection | null = null
-  let dataChannel: RTCDataChannel | null = null
-  let audioElement: HTMLAudioElement | null = null
-  let mediaStream: MediaStream | null = null
-  let connected = false
-  let connecting = false
+  let peerConnection: RTCPeerConnection | null = null;
+  let dataChannel: RTCDataChannel | null = null;
+  let audioElement: HTMLAudioElement | null = null;
+  let mediaStream: MediaStream | null = null;
+  let connected = false;
+  let connecting = false;
 
   async function connect() {
     // Prevent multiple connections
     if (connecting || connected) {
-      console.log('Already connecting or connected, skipping')
-      return
+      console.log("Already connecting or connected, skipping");
+      return;
     }
 
-    connecting = true
+    connecting = true;
 
     try {
       // Create peer connection
-      peerConnection = new RTCPeerConnection()
+      peerConnection = new RTCPeerConnection();
 
       // Set up audio playback - create element and add to DOM
-      audioElement = document.createElement('audio')
-      audioElement.autoplay = true
-      audioElement.id = 'realtime-audio-' + Date.now()
+      audioElement = document.createElement("audio");
+      audioElement.autoplay = true;
+      audioElement.id = "realtime-audio-" + Date.now();
+      audioElement.volume = 1.0;
       // Add to body to ensure it plays
-      document.body.appendChild(audioElement)
-      
-      peerConnection.ontrack = (event) => {
-        if (audioElement && event.streams[0]) {
-          audioElement.srcObject = event.streams[0]
-        }
-      }
+      document.body.appendChild(audioElement);
 
-      // Get user microphone
-      mediaStream = await navigator.mediaDevices.getUserMedia({ 
+      peerConnection.ontrack = (event) => {
+        console.log("Received audio track:", event.streams[0]);
+        if (audioElement && event.streams[0]) {
+          audioElement.srcObject = event.streams[0];
+          // Ensure audio plays
+          audioElement.play().catch((e) => {
+            console.error("Error playing audio:", e);
+          });
+        }
+      };
+
+      // Get user microphone with optimal settings
+      console.log("Requesting microphone access...");
+      mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
-      })
-      
+          autoGainControl: true,
+          sampleRate: 24000,
+        },
+      });
+      console.log("Microphone access granted");
+
       // Add audio track to peer connection
-      mediaStream.getTracks().forEach(track => {
-        peerConnection?.addTrack(track, mediaStream!)
-      })
+      mediaStream.getTracks().forEach((track) => {
+        console.log("Adding audio track:", track.label);
+        peerConnection?.addTrack(track, mediaStream!);
+      });
 
       // Create data channel for events
-      dataChannel = peerConnection.createDataChannel('oai-events')
-      
+      dataChannel = peerConnection.createDataChannel("oai-events");
+
       dataChannel.onopen = () => {
+        console.log("Data channel opened");
         // Send session configuration
         const sessionConfig = {
-          type: 'session.update',
+          type: "session.update",
           session: {
-            modalities: ['text', 'audio'],
+            modalities: ["text", "audio"],
             instructions: config.systemPrompt,
             voice: config.voice,
-            input_audio_format: 'pcm16',
-            output_audio_format: 'pcm16',
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
             input_audio_transcription: {
-              model: 'whisper-1'
+              model: "whisper-1",
             },
             turn_detection: {
-              type: 'server_vad',
+              type: "server_vad",
               threshold: 0.5,
               prefix_padding_ms: 300,
-              silence_duration_ms: 500
-            }
-          }
-        }
-        dataChannel?.send(JSON.stringify(sessionConfig))
-      }
+              silence_duration_ms: 500,
+            },
+            temperature: 0.8,
+            max_response_output_tokens: 4096,
+          },
+        };
+        console.log("Sending session config:", sessionConfig);
+        dataChannel?.send(JSON.stringify(sessionConfig));
+      };
 
       dataChannel.onmessage = (event) => {
         try {
-          const message = JSON.parse(event.data)
-          handleRealtimeMessage(message)
+          const message = JSON.parse(event.data);
+          console.log("Received message:", message.type, message);
+          handleRealtimeMessage(message);
         } catch (e) {
-          console.error('Error parsing realtime message:', e)
+          console.error("Error parsing realtime message:", e);
         }
-      }
+      };
+
+      dataChannel.onerror = (error) => {
+        console.error("Data channel error:", error);
+        config.onError?.(new Error("Data channel error"));
+      };
+
+      dataChannel.onclose = () => {
+        console.log("Data channel closed");
+      };
 
       // Create and set local description
-      const offer = await peerConnection.createOffer()
-      await peerConnection.setLocalDescription(offer)
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
 
       // Send offer to OpenAI
+      console.log("Sending offer to OpenAI...");
       const response = await fetch(
         `https://api.openai.com/v1/realtime?model=${config.model}`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${config.token}`,
-            'Content-Type': 'application/sdp'
+            Authorization: `Bearer ${config.token}`,
+            "Content-Type": "application/sdp",
           },
-          body: offer.sdp
+          body: offer.sdp,
         }
-      )
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to connect: ${response.status}`)
+        const errorText = await response.text();
+        console.error("OpenAI connection failed:", response.status, errorText);
+        throw new Error(`Failed to connect: ${response.status} - ${errorText}`);
       }
 
-      const answerSdp = await response.text()
+      const answerSdp = await response.text();
+      console.log("Received answer from OpenAI, setting remote description...");
       await peerConnection.setRemoteDescription({
-        type: 'answer',
-        sdp: answerSdp
-      })
+        type: "answer",
+        sdp: answerSdp,
+      });
 
-      connected = true
-      connecting = false
-      config.onConnectionChange?.(true)
+      console.log("WebRTC connection established");
+      connected = true;
+      connecting = false;
+      config.onConnectionChange?.(true);
     } catch (error) {
-      connecting = false
-      config.onError?.(error as Error)
-      disconnect()
+      connecting = false;
+      config.onError?.(error as Error);
+      disconnect();
     }
   }
 
   function handleRealtimeMessage(message: Record<string, unknown>) {
-    const type = message.type as string
+    const type = message.type as string;
 
     switch (type) {
-      case 'conversation.item.input_audio_transcription.completed':
-        config.onTranscript?.(message.transcript as string, 'user')
-        break
+      case "session.created":
+      case "session.updated":
+        console.log("Session ready:", type);
+        break;
 
-      case 'response.audio_transcript.done':
-        config.onTranscript?.(message.transcript as string, 'assistant')
-        break
+      case "conversation.item.input_audio_transcription.completed":
+        console.log("User transcript:", message.transcript);
+        config.onTranscript?.(message.transcript as string, "user");
+        break;
 
-      case 'response.audio.started':
-        config.onAudioStart?.()
-        break
+      case "response.audio_transcript.delta":
+        // Accumulate transcript deltas
+        console.log("AI transcript delta:", (message as any).delta);
+        break;
 
-      case 'response.audio.done':
-        config.onAudioEnd?.()
-        break
+      case "response.audio_transcript.done":
+        console.log("AI transcript done:", message.transcript);
+        config.onTranscript?.(message.transcript as string, "assistant");
+        break;
 
-      case 'error':
-        config.onError?.(new Error((message.error as Record<string, string>)?.message || 'Unknown error'))
-        break
+      case "response.audio.delta":
+        // Audio chunks being received
+        break;
+
+      case "response.audio.started":
+        console.log("AI started speaking");
+        config.onAudioStart?.();
+        break;
+
+      case "response.audio.done":
+        console.log("AI finished speaking");
+        config.onAudioEnd?.();
+        break;
+
+      case "response.done":
+        console.log("Response completed");
+        break;
+
+      case "input_audio_buffer.speech_started":
+        console.log("User started speaking");
+        break;
+
+      case "input_audio_buffer.speech_stopped":
+        console.log("User stopped speaking");
+        break;
+
+      case "error":
+        console.error("Realtime API error:", message.error);
+        config.onError?.(
+          new Error(
+            (message.error as Record<string, string>)?.message ||
+              "Unknown error"
+          )
+        );
+        break;
+
+      default:
+        // Log other message types for debugging
+        console.log("Unhandled message type:", type);
     }
   }
 
   function disconnect() {
     // Stop all microphone tracks
     if (mediaStream) {
-      mediaStream.getTracks().forEach(track => {
-        track.stop()
-      })
-      mediaStream = null
+      mediaStream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      mediaStream = null;
     }
 
     if (dataChannel) {
-      dataChannel.close()
-      dataChannel = null
+      dataChannel.close();
+      dataChannel = null;
     }
-    
+
     if (peerConnection) {
-      peerConnection.close()
-      peerConnection = null
+      peerConnection.close();
+      peerConnection = null;
     }
 
     // Remove audio element from DOM and clean up
     if (audioElement) {
-      audioElement.pause()
-      audioElement.srcObject = null
+      audioElement.pause();
+      audioElement.srcObject = null;
       if (audioElement.parentNode) {
-        audioElement.parentNode.removeChild(audioElement)
+        audioElement.parentNode.removeChild(audioElement);
       }
-      audioElement = null
+      audioElement = null;
     }
 
-    connected = false
-    connecting = false
-    config.onConnectionChange?.(false)
+    connected = false;
+    connecting = false;
+    config.onConnectionChange?.(false);
   }
 
   function isConnected() {
-    return connected
+    return connected;
   }
 
   return {
     connect,
     disconnect,
-    isConnected
-  }
+    isConnected,
+  };
 }

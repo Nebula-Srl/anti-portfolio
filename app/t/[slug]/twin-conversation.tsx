@@ -72,13 +72,20 @@ export function TwinConversation({
             defaultValue="conversation"
             className="w-full md:w-10/12 mx-auto"
           >
-            <TabsList className="w-full grid grid-cols-3 mb-6 bg-white/5 backdrop-blur-md border border-white/10">
+            <TabsList className="w-full grid grid-cols-4 mb-6 bg-white/5 backdrop-blur-md border border-white/10">
               <TabsTrigger
                 value="conversation"
                 className="gap-2 data-[state=active]:bg-white/10"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span className="hidden sm:inline">Conversazione</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="profile"
+                className="gap-2 data-[state=active]:bg-white/10"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Profilo</span>
               </TabsTrigger>
               <TabsTrigger
                 value="documents"
@@ -107,8 +114,8 @@ export function TwinConversation({
                   </p>
                 </div>
               )}
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="bg-white/5 backdrop-blur-md rounded-xl p-6">
+              <div className="flex flex-col lg:flex-row gap-6">
+                <div className="bg-white/5 backdrop-blur-md rounded-xl p-6 w-full lg:w-1/2">
                   {/* Conversation Interface */}
                   <div className="text-center">
                     <div
@@ -147,10 +154,10 @@ export function TwinConversation({
                 </div>
 
                 {/* Right Column: Live Transcript (visible on desktop during conversation) */}
-                <div className="">
+                <div className="w-full lg:w-1/2">
                   <div className="sticky top-8">
                     <Card className="bg-white/5 backdrop-blur-md border-white/10">
-                      <CardContent className="px-6 py">
+                      <CardContent className="px-6 py-6">
                         <h3 className="font-medium mb-3 text-sm text-white">
                           Domande suggerite:
                         </h3>

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verify } from "jsonwebtoken";
-import type { EditTokenPayload, TwinProfile, Skill } from "@/lib/types";
+import type { EditTokenPayload } from "@/lib/types";
+import type { TwinProfile, Skill } from "@/lib/supabase/client";
 
 const JWT_SECRET =
   process.env.JWT_SECRET_KEY || "your-secret-key-change-in-production";
@@ -39,13 +40,8 @@ export async function POST(request: Request) {
     }
 
     const body: SaveProfileRequest = await request.json();
-    const {
-      displayName,
-      profilePhotoUrl,
-      identitySummary,
-      theme,
-      skills,
-    } = body;
+    const { displayName, profilePhotoUrl, identitySummary, theme, skills } =
+      body;
 
     const supabase = createServerSupabaseClient();
 
@@ -100,10 +96,7 @@ export async function POST(request: Request) {
 
     // Delete existing skills
     if (existingSkills && existingSkills.length > 0) {
-      await supabase
-        .from("skills")
-        .delete()
-        .eq("twin_id", tokenPayload.twinId);
+      await supabase.from("skills").delete().eq("twin_id", tokenPayload.twinId);
     }
 
     // Insert new skills (filter out temp IDs)
@@ -114,7 +107,6 @@ export async function POST(request: Request) {
         category: skill.category,
         skill_name: skill.skill_name,
         proficiency_level: skill.proficiency_level,
-        years_experience: skill.years_experience,
       }));
 
     // Also include skills with temp IDs (they're new skills)
@@ -125,7 +117,6 @@ export async function POST(request: Request) {
         category: skill.category,
         skill_name: skill.skill_name,
         proficiency_level: skill.proficiency_level,
-        years_experience: skill.years_experience,
       }));
 
     const allSkillsToInsert = [...skillsToInsert, ...newSkills];
@@ -153,4 +144,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

@@ -11,12 +11,13 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Check } from "lucide-react";
 import { toast } from "react-toastify";
+import { Twin } from "@/lib/supabase/client";
 
 interface OtpVerificationProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sessionId: string;
-  onVerified: (editToken: string, twin: any) => void;
+  onVerified: (editToken: string, twin: Twin) => void;
   onResendOtp: () => void;
 }
 
@@ -187,7 +188,9 @@ export function OtpVerification({
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => (inputRefs.current[index] = el)}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}

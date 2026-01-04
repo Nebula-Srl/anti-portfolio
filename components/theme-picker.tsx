@@ -1,44 +1,56 @@
-'use client'
+"use client";
 
-import { getTheme, type ThemeName } from '@/lib/themes'
+import { getTheme, type ThemeName } from "@/lib/themes";
 
 interface ThemePickerProps {
-  selectedTheme: ThemeName
-  onChange: (theme: ThemeName) => void
-  disabled?: boolean
+  selectedTheme: ThemeName;
+  onChange: (theme: ThemeName) => void;
+  disabled?: boolean;
 }
 
 const themes: { name: ThemeName; label: string }[] = [
-  { name: 'cosmic', label: 'Cosmic' },
-  { name: 'sunset', label: 'Sunset' },
-  { name: 'ocean', label: 'Ocean' },
-  { name: 'forest', label: 'Forest' },
-  { name: 'rose', label: 'Rose' },
-  { name: 'midnight', label: 'Midnight' },
-]
+  { name: "cosmic", label: "Cosmic" },
+  { name: "ocean", label: "Ocean" },
+  { name: "sunset", label: "Sunset" },
+  { name: "forest", label: "Forest" },
+  { name: "aurora", label: "Aurora" },
+  { name: "galaxy", label: "Galaxy" },
+  { name: "neon", label: "Neon" },
+  { name: "lavender", label: "Lavender" },
+  { name: "ember", label: "Ember" },
+  { name: "midnight", label: "Midnight" },
+];
 
-export function ThemePicker({ selectedTheme, onChange, disabled }: ThemePickerProps) {
+export function ThemePicker({
+  selectedTheme,
+  onChange,
+  disabled,
+}: ThemePickerProps) {
   return (
     <>
       {/* Desktop: Visual Grid */}
       <div className="hidden md:grid grid-cols-6 gap-3">
         {themes.map((theme) => {
-          const config = getTheme(theme.name)
-          const isSelected = selectedTheme === theme.name
-          
+          const config = getTheme(theme.name);
+          const isSelected = selectedTheme === theme.name;
+
           return (
             <button
               key={theme.name}
               onClick={() => onChange(theme.name)}
               disabled={disabled}
               className={`
-                relative group rounded-xl overflow-hidden transition-all duration-300
-                ${isSelected ? 'ring-4 ring-white scale-105' : 'ring-2 ring-white/20 hover:ring-white/50 hover:scale-102'}
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                relative group rounded-xl overflow-hidden transition-all duration-300 min-w-24 min-h-24
+                ${
+                  isSelected
+                    ? "ring-4 ring-white scale-105"
+                    : "ring-2 ring-white/20 hover:ring-white/50 hover:scale-102"
+                }
+                ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
               `}
               style={{
                 background: config.gradient,
-                height: '80px',
+                height: "80px",
               }}
             >
               {/* Accent indicator */}
@@ -46,7 +58,7 @@ export function ThemePicker({ selectedTheme, onChange, disabled }: ThemePickerPr
                 className="absolute bottom-0 left-0 right-0 h-1"
                 style={{ backgroundColor: config.accentColor }}
               />
-              
+
               {/* Label */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-white text-xs font-semibold drop-shadow-lg">
@@ -74,7 +86,7 @@ export function ThemePicker({ selectedTheme, onChange, disabled }: ThemePickerPr
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
             </button>
-          )
+          );
         })}
       </div>
 
@@ -94,6 +106,5 @@ export function ThemePicker({ selectedTheme, onChange, disabled }: ThemePickerPr
         </select>
       </div>
     </>
-  )
+  );
 }
-

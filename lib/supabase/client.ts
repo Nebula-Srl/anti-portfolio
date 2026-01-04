@@ -19,6 +19,8 @@ export interface Twin {
   voice_agent_config: Record<string, unknown>;
   is_public: boolean;
   theme: string; // Theme identifier for personalized backgrounds
+  profile_photo_url?: string; // URL to profile photo in Supabase Storage
+  updated_at?: string;
 }
 
 export interface TwinSession {

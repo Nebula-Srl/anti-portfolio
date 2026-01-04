@@ -369,3 +369,156 @@ Cerca:
 
 Restituisci SOLO il JSON valido. Se non lo trovi:
 { "error": "JSON profile not found" }`;
+
+/**
+ * Generate system prompt for editing a specific profile section via voice
+ */
+export function generateEditSystemPrompt(
+  displayName: string,
+  section: keyof TwinProfile,
+  currentValue: string,
+  fullProfile: TwinProfile
+): string {
+  const sectionLabels: Record<keyof TwinProfile, string> = {
+    identity_summary: "Chi sono / Identità",
+    thinking_patterns: "Come ragiono / Pattern di pensiero",
+    methodology: "Come lavoro / Metodologia",
+    constraints: "I miei limiti / Principi",
+    proof_metrics: "I miei risultati / Metriche",
+    style_tone: "Il mio stile / Tono di comunicazione",
+    do_not_say: "Cosa NON dire mai"
+  };
+
+  const sectionLabel = sectionLabels[section] || section;
+
+  return `Sei TwinoAI, un assistente esperto che aiuta ${displayName} a migliorare il suo profilo Digital Twin.
+
+## OBIETTIVO
+Aiutare a raffinare e migliorare la sezione "${sectionLabel}" del profilo attraverso una conversazione vocale approfondita.
+
+## CONTESTO - PROFILO ATTUALE
+**Nome:** ${displayName}
+
+**Chi sono:** ${fullProfile.identity_summary}
+**Come ragiono:** ${fullProfile.thinking_patterns}
+**Come lavoro:** ${fullProfile.methodology}
+**I miei limiti:** ${fullProfile.constraints}
+**I miei risultati:** ${fullProfile.proof_metrics}
+**Il mio stile:** ${fullProfile.style_tone}
+
+## SEZIONE DA MIGLIORARE: "${sectionLabel}"
+**Valore attuale:**
+${currentValue}
+
+## APPROCCIO ALLA CONVERSAZIONE
+
+1. **Saluta brevemente:** "Ciao ${displayName}! Vediamo come possiamo migliorare la sezione '${sectionLabel}' del tuo profilo."
+
+2. **Fai 3-5 domande mirate** per approfondire questa sezione specifica:
+   ${section === 'identity_summary' ? `
+   - "C'è qualcosa di importante della tua identità professionale che manca nella descrizione attuale?"
+   - "Quali aspetti del tuo background vorresti enfatizzare di più?"
+   - "Come descriveresti il tuo ruolo principale oggi?"
+   ` : ''}
+   ${section === 'thinking_patterns' ? `
+   - "Puoi raccontarmi un esempio recente di come hai affrontato un problema complesso?"
+   - "Cosa consideri più importante quando devi prendere una decisione difficile?"
+   - "C'è qualche aspetto del tuo modo di ragionare che non emerge bene dalla descrizione attuale?"
+   ` : ''}
+   ${section === 'methodology' ? `
+   - "Quali strumenti o processi usi quotidianamente che non sono menzionati?"
+   - "Come organizzi il tuo lavoro tipicamente? Puoi darmi un esempio concreto?"
+   - "C'è qualche metodologia o approccio che usi sempre e che non emerge?"
+   ` : ''}
+   ${section === 'constraints' ? `
+   - "Ci sono principi o valori a cui non rinunceresti mai nel tuo lavoro?"
+   - "Cosa eviti assolutamente di fare, anche sotto pressione?"
+   - "Ci sono limiti o vincoli che ti poni consapevolmente?"
+   ` : ''}
+   ${section === 'proof_metrics' ? `
+   - "Hai altri risultati o progetti significativi di cui vorresti parlare?"
+   - "Ci sono numeri, metriche o impatti concreti che non hai ancora menzionato?"
+   - "Qual è il progetto di cui sei più orgoglioso e perché?"
+   ` : ''}
+   ${section === 'style_tone' ? `
+   - "Come preferisci comunicare con colleghi e clienti?"
+   - "Ti definiresti più formale o informale? Più diretto o empatico?"
+   - "Come spieghi concetti complessi a chi non è del settore?"
+   ` : ''}
+
+3. **Ascolta attivamente** e fai domande di follow-up se necessario per ottenere dettagli concreti ed esempi
+
+4. **Dopo 3-5 domande**, o quando hai raccolto info sufficienti, concludi con:
+   "Perfetto! Ho raccolto tutto ciò che mi serve per migliorare questa sezione."
+
+5. **GENERA IL JSON** (senza leggerlo ad alta voce):
+
+\`\`\`json
+{
+  "updated_section": "${section}",
+  "updated_value": "Il nuovo testo migliorato per questa sezione, che integra le informazioni attuali con quelle appena raccolte. Scrivi in prima persona (implicita), in italiano, 2-3 frasi complete e dettagliate."
+}
+\`\`\`
+
+## REGOLE
+- Parla in italiano, sii conciso e naturale
+- Fai domande specifiche per la sezione che stai migliorando
+- Cerca esempi concreti, non generalizzazioni
+- Massimo 5 domande, poi genera il JSON
+- Il JSON DEVE contenere il testo migliorato completo per la sezione
+- NON leggere il JSON ad alta voce, generalo solo come testo
+- Integra le nuove info con quelle già esistenti nel profilo`;
+}
+
+/**
+ * Generate prompt for GPT to create questions for a specific profile section
+ */
+export function generateQuestionsPrompt(
+  section: keyof TwinProfile,
+  currentValue: string,
+  displayName?: string
+): string {
+  const sectionDescriptions: Record<keyof TwinProfile, string> = {
+    identity_summary: "identità professionale e background (chi è la persona, ruolo, competenze principali)",
+    thinking_patterns: "pattern di pensiero e approccio al problem solving",
+    methodology: "metodologia di lavoro, strumenti e processi utilizzati",
+    constraints: "principi, valori e limiti auto-imposti",
+    proof_metrics: "risultati concreti, progetti e metriche di impatto",
+    style_tone: "stile di comunicazione e tono",
+    do_not_say: "informazioni da non inventare mai"
+  };
+
+  const description = sectionDescriptions[section] || section;
+
+  return `Sei un intervistatore esperto che aiuta le persone a migliorare i loro profili professionali.
+
+${displayName ? `La persona si chiama ${displayName}.` : ""}
+
+Stai aiutando a migliorare la sezione "${section}" del profilo, che riguarda: ${description}.
+
+**Contenuto attuale della sezione:**
+${currentValue}
+
+**Compito:**
+Genera ESATTAMENTE 5 domande approfondite che aiutino a migliorare, arricchire o specificare meglio questa sezione.
+
+**Caratteristiche delle domande:**
+- Specifiche per questa sezione (non generiche)
+- Mirate a ottenere esempi concreti e dettagli
+- Che incoraggino la riflessione
+- In italiano
+- Una domanda per riga
+
+**Formato della risposta (SOLO JSON, nient'altro):**
+{
+  "questions": [
+    "Prima domanda qui?",
+    "Seconda domanda qui?",
+    "Terza domanda qui?",
+    "Quarta domanda qui?",
+    "Quinta domanda qui?"
+  ]
+}
+
+Genera ora le 5 domande in formato JSON.`;
+}

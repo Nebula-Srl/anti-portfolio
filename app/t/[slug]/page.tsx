@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { TwinConversation } from "./twin-conversation";
+import { EditTwinButton } from "@/components/edit-twin-button";
 import type { Twin, Skill, TwinProfile } from "@/lib/supabase/client";
 import { getTheme } from "@/lib/themes";
 import { Sparkles } from "lucide-react";
@@ -95,19 +96,36 @@ export default async function TwinPage({ params }: TwinPageProps) {
             <span className="text-sm text-white/80">Digital Twin</span>
           </div>
 
+          {/* Profile Photo */}
+          {twin.profile_photo_url && (
+            <div className="mb-6">
+              <img
+                src={twin.profile_photo_url}
+                alt={twin.display_name}
+                className="w-32 h-32 rounded-full mx-auto border-4 border-white/20 object-cover"
+              />
+            </div>
+          )}
+
           <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
             <span className="bg-linear-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent">
               {twin.display_name}
             </span>
           </h1>
 
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <p className="text-white text-sm">
-              {(twin.profile_json as TwinProfile).identity_summary &&
-              (twin.profile_json as TwinProfile).identity_summary !== "-"
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <p className="text-white text-sm max-w-2xl">
+              {twin.profile_json && 
+               (twin.profile_json as TwinProfile).identity_summary &&
+               (twin.profile_json as TwinProfile).identity_summary !== "-"
                 ? (twin.profile_json as TwinProfile).identity_summary
                 : `Parla con il Digital Twin di ${twin.display_name}. Scopri di più attraverso una conversazione vocale.`}
             </p>
+
+            {/* Edit Button */}
+            {twin.email && (
+              <EditTwinButton twin={twin} />
+            )}
           </div>
         </div>
 
